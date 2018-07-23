@@ -1,0 +1,7 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:l="/lib/layout">
+    <l:task title="${action.displayName}"
+            href="${rootURL}/${action.urlName}"
+    />
+    <link rel="alternate" title="RssAll" href="${rootURL}/${it.url}rssAll" type="application/rss+xml" />
+</j:jelly>
