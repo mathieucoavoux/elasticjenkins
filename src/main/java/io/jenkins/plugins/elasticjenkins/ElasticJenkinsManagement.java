@@ -93,6 +93,7 @@ public class ElasticJenkinsManagement extends ManagementLink {
      */
     public HttpResponse doConfigure(@QueryParameter String masterName, @QueryParameter String persistenceStore,
                                     @QueryParameter String charset, @QueryParameter String clusterName,
+                                    @QueryParameter String jenkinsLogs,
                                     @QueryParameter boolean forceCreation) {
         //Check if the form is filled correctly
         if(masterName == null || masterName.isEmpty() || persistenceStore == null || masterName.isEmpty()
@@ -109,7 +110,7 @@ public class ElasticJenkinsManagement extends ManagementLink {
         }
 
         //Save the properties
-        if(!ElasticJenkinsUtil.writeProperties(masterName,persistenceStore,charset))
+        if(!ElasticJenkinsUtil.writeProperties(masterName,persistenceStore,charset,jenkinsLogs))
             return HttpResponses.redirectTo(".?error");
 
         //Check if the master exist already

@@ -1,6 +1,7 @@
 package io.jenkins.plugins.elasticjenkins;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -67,7 +68,8 @@ public class ElasticJenkinsWrapper extends SimpleBuildWrapper {
 				LOGGER.log(Level.INFO,"Id:"+id);
 				ElasticManager em = new ElasticManager();
 				String index = ElasticJenkinsUtil.getHash(build.getUrl());
-				id = em.updateBuild(index,"builds",build,id);
+				int maxLines = (int) Files.lines(build.getLogFile().toPath()).count();
+				id = em.updateBuild(index,"builds",build,id,build.getResult().toString(),build.getLog(maxLines));
             }
         }
     }

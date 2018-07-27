@@ -110,17 +110,30 @@ public class ElasticJenkinsUtil {
      * @return: boolean
      */
     public static synchronized boolean writeProperties(@Nonnull String masterName,
-                                                       @Nonnull String persistenceStore,@Nonnull String charset) {
+                                                       @Nonnull String persistenceStore,@Nonnull String charset,
+                                                       @Nonnull String logIndex) {
         OutputStream out = null;
         Properties props = new Properties();
-        props.setProperty("masterName",masterName);
-        props.setProperty("persistenceStore",persistenceStore);
-        props.setProperty("charset",charset);
+        props.setProperty("masterName", masterName);
+        props.setProperty("persistenceStore", persistenceStore);
+        props.setProperty("charset", charset);
+        props.setProperty("jenkins_logs",logIndex);
         try {
             out = new FileOutputStream(propertiesFile);
-            BufferedWriter writer = new BufferedWriter(new FileWriter(propertiesFile.getPath(),false));
+            BufferedWriter writer = new BufferedWriter(new FileWriter(propertiesFile.getPath(), false));
             props.store(writer, "Persist properties");
-        } catch (Exception e) {
+        }catch (FileNotFoundException e) {
+            LOGGER.log(Level.WARNING, "Properties file not found. This may occur in testing mode. We try to create parent directory");
+            Jenkins.getInstance().getRootDir().mkdirs();
+            try {
+                out = new FileOutputStream(propertiesFile);
+                BufferedWriter writer = new BufferedWriter(new FileWriter(propertiesFile.getPath(), false));
+                props.store(writer, "Persist properties");
+            }catch(Exception e1) {
+                LOGGER.log(Level.SEVERE, "Can not save properties", e1);
+                return false;
+            }
+        }catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Can not save properties", e);
             return false;
         }finally {

@@ -43,7 +43,7 @@ public class ElasticJenkinsManagementTest {
     @Test
     public void testDoConfigure() throws IllegalAccessException, NoSuchFieldException, IOException, InterruptedException {
         ElasticJenkinsManagement elasticJenkinsManagement = new ElasticJenkinsManagement();
-        HttpResponse responseOK = elasticJenkinsManagement.doConfigure(master,url,"UTF-16",clusterName,false);
+        HttpResponse responseOK = elasticJenkinsManagement.doConfigure(master,url,"UTF-16",clusterName,"jenkins_logs",false);
         //Check response
         Field statusCodeField = responseOK.getClass().getDeclaredField("statusCode");
         statusCodeField.setAccessible(true);

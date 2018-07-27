@@ -3,6 +3,7 @@ package io.jenkins.plugins.elasticjenkins.util;
 import io.jenkins.plugins.elasticjenkins.ElasticJenkinsManagement;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.Before;
@@ -21,6 +22,8 @@ public class ElasticJenkinsUtilTest {
     public static String master = "MASTERNAME";
     public static String clusterName = "CLUSTERNAME";
     public static String hostname = "MYHOST";
+    private static String indexJenkinsMaster = "jenkins_manage";
+    private static String indexLog = "jenkins_logs";
 
     @Rule
     public JenkinsRule j = new JenkinsRule();
@@ -35,8 +38,8 @@ public class ElasticJenkinsUtilTest {
     }
 
     @Before
-    public void setUp() throws IOException {
-        ElasticJenkinsUtil.writeProperties(master,url,"UTF-16");
+    public void setUp() throws IOException, InterruptedException {
+        ElasticJenkinsUtil.writeProperties(master,url,"UTF-16",indexLog);
 
     }
 
@@ -48,15 +51,16 @@ public class ElasticJenkinsUtilTest {
 
     @Test
     public void testGetIdByMaster() throws InterruptedException, IOException {
-        String masterId = ElasticJenkinsUtil.getIdByMaster(master);
-        assertEquals(null,masterId);
         ElasticJenkinsManagement ejm = new ElasticJenkinsManagement();
-        assertTrue(ejm.addJenkinsMaster(master,clusterName,hostname,masterId));
+        assertTrue(ejm.addJenkinsMaster(master,clusterName,hostname,null));
         //Leave a short period to let Elasticsearch saving the entry correctly
         Thread.sleep(2000);
         String masterId2 = ElasticJenkinsUtil.getIdByMaster(master);
-        System.out.println("master2"+masterId2);
         assertTrue(masterId2 != null);
         deleleTest(masterId2);
+        Thread.sleep(2000);
+        String masterId = ElasticJenkinsUtil.getIdByMaster(master);
+        assertEquals(null,masterId);
+
     }
 }

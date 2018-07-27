@@ -44,7 +44,7 @@ public class GenericBuild {
      * Log output of the job
      */
     @Nullable
-    protected List<String> logOutput;
+    protected String logOutput;
 
     /**
      * Status of the job
@@ -123,11 +123,11 @@ public class GenericBuild {
         this.parameters = parameters;
     }
 
-    public List<String> getLogOutput() {
+    public String getLogOutput() {
         return logOutput;
     }
 
-    public void setLogOutput(List<String> logOutput) {
+    public void setLogOutput(String logOutput) {
         this.logOutput = logOutput;
     }
 

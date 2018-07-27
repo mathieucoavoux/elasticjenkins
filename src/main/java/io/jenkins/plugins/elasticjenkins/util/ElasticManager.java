@@ -92,7 +92,7 @@ public class ElasticManager {
             StringEntity entity = new StringEntity(json);
 
             ElasticsearchResult esr = gson.fromJson(ElasticJenkinsUtil.elasticPost(uri,entity),ElasticsearchResult.class);
-            if (esr.getResult().equals("created")) elasticSearchId = esr.get_id();
+            if (esr.getResult().equals("created") || esr.getResult().equals("updated")) elasticSearchId = esr.get_id();
         } catch (UnsupportedEncodingException e) {
             LOGGER.log(Level.SEVERE,"Generic build is not serializable into JSON. Build: "
                     +genericBuild.getId()+" project:"+genericBuild.getName()+" will not be saved");
@@ -101,14 +101,19 @@ public class ElasticManager {
     }
 
     public String updateBuild(@Nonnull String index, @Nonnull String type,
-                              @Nonnull Run<?,?> build, @Nonnull String id) {
+                              @Nonnull Run<?,?> build, @Nonnull String id,
+                              @Nonnull String status,
+                              @Nullable List<String> logs) {
         String elasticSearchId = "";
-        Gson gson = new GsonBuilder().create();
+        String indexLogs = ElasticJenkinsUtil.getProperty("jenkins_logs");
+        //Gson gson = new GsonBuilder().create();
 
-        GenericBuild genericBuild = new GenericBuild();
-        genericBuild.setName(ElasticJenkinsUtil.convertUrlToFullName(build.getUrl()));
-        genericBuild.setId(build.getId());
-        genericBuild.setStartDate(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(build.getStartTimeInMillis())));
+        //GenericBuild genericBuild = new GenericBuild();
+        //genericBuild.setName(ElasticJenkinsUtil.convertUrlToFullName(build.getUrl()));
+
+        //genericBuild.setId(build.getId());
+
+        //genericBuild.setStartDate(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(build.getStartTimeInMillis())));
 
         /*
         List<ParametersAction> parametersActions = build.getActions(ParametersAction.class);
@@ -117,9 +122,11 @@ public class ElasticManager {
         }
         */
         //genericBuild.setParameters();
-        genericBuild.setLaunchedByName(User.current().getDisplayName());
-        genericBuild.setLaunchedById(User.current().getId());
-        genericBuild.setStatus("COMPLETED");
+
+        //genericBuild.setLaunchedByName(User.current().getDisplayName());
+        //genericBuild.setLaunchedById(User.current().getId());
+
+        //genericBuild.setStatus("COMPLETED");
 
         /*
         List<String> listExample = new ArrayList<String>();
@@ -127,38 +134,60 @@ public class ElasticManager {
         listExample.add("Line2");
         genericBuild.setLogOutput(listExample);
 */
+        List<String> update = new ArrayList<>();
         try {
             //byte[] bytes = Files.readAllBytes(build.getLogFile().toPath());
             //genericBuild.setLogOutput(bytes);
 
             List<String> list = Files.readAllLines(build.getLogFile().toPath());
-            List<String> update = new ArrayList<>();
+
             //genericBuild.setLogOutput(list);
-            for(String oneLine : list) {
+            for(String oneLine : logs) {
                 //TODO: Set the Charset in the management console
                 update.add(URLEncoder.encode(oneLine,"UTF-16"));
                 LOGGER.log(Level.INFO,"Line:"+oneLine);
             }
-            genericBuild.setLogOutput(update);
+            //genericBuild.setLogOutput(update);
 
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE,"An unexpected response was received:",e);
         }
 
-        String json = gson.toJson(genericBuild);
+        //String json = gson.toJson(genericBuild);
 
-        String uri = url+"/"+index+"/"+type+"/"+id;
+        String typeLog = new SimpleDateFormat("yyyy_MM").format(new Date());
+        String logId = null;
+        if (logs != null ) {
+            String uriLogs = url + "/" + indexLogs + "/" + typeLog;
+            StringEntity entityLog = null;
+            try {
+                entityLog = new StringEntity("{ \"logs\" : \n" +
+                                 gson.toJson(update,List.class) +
+                        "}");
+                ElasticsearchResult esr2 = gson.fromJson(ElasticJenkinsUtil.elasticPost(uriLogs,entityLog),ElasticsearchResult.class);
+                if (esr2.getResult().equals("created")) logId = esr2.get_id();
+            } catch (UnsupportedEncodingException e) {
+                LOGGER.log(Level.SEVERE,"An unexpected response was received:",e);
+            }
+        }
+        String uri = url+"/"+index+"/"+type+"/"+id+"/_update";
         StringEntity entity = null;
+        LOGGER.log(Level.INFO,"Log id:"+logId);
         try {
-            entity = new StringEntity(json);
+            entity = new StringEntity("{\n" +
+                    "  \"doc\": {\n" +
+                    "    \"status\" : \""+status+"\",\n" +
+                    "    \"logOutput\" : " + "\""+typeLog+"/"+logId+"\"" +
+                    "  }\n" +
+                    "}");
 
 
             ElasticsearchResult esr = gson.fromJson(ElasticJenkinsUtil.elasticPost(uri,entity),ElasticsearchResult.class);
 
             if (esr.getResult().equals("updated")) elasticSearchId = esr.get_id();
         } catch (UnsupportedEncodingException e) {
-            LOGGER.log(Level.SEVERE,"Generic build is not serializable into JSON. Build: "
-                    +genericBuild.getId()+" project:"+genericBuild.getName()+" will not be saved");
+           // LOGGER.log(Level.SEVERE,"Generic build is not serializable into JSON. Build: "
+            //        +genericBuild.getId()+" project:"+genericBuild.getName()+" will not be saved");
         }
 
         return elasticSearchId;
@@ -219,6 +248,11 @@ public class ElasticManager {
         return gson.fromJson(ElasticJenkinsUtil.elasticGet(uri),GenericBuild.class);
     }
 
+    protected List<String> getLogOutput(@Nonnull String suffix) {
+        String indexLogs = ElasticJenkinsUtil.getProperty("jenkins_logs");
+        String uri = url+"/"+indexLogs+"/"+suffix;
+        return gson.fromJson(ElasticJenkinsUtil.elasticGet(uri),List.class);
+    }
 
     public List<ElasticMaster> getMasterByNameAndCluster(@Nonnull String masterName,
                                                          @Nonnull String clusterName) {
