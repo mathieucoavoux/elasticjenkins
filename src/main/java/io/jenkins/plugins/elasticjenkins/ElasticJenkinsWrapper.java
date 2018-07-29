@@ -1,6 +1,8 @@
 package io.jenkins.plugins.elasticjenkins;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -23,6 +25,7 @@ import jenkins.tasks.SimpleBuildWrapper;
 public class ElasticJenkinsWrapper extends SimpleBuildWrapper {
 
 	private static final Logger LOGGER = Logger.getLogger(ElasticJenkins.class.getName());
+	private static String charset = ElasticJenkinsUtil.getProperty("charset");
 	
 	@DataBoundConstructor
 	public ElasticJenkinsWrapper(){}
@@ -51,10 +54,15 @@ public class ElasticJenkinsWrapper extends SimpleBuildWrapper {
 
 	    public DisposerImpl(Run<?,?> build) {
 	        //We save the build here when it starts
-			LOGGER.log(Level.INFO,"Elasticsearch plugin build starts disposerImpl");
 			ElasticManager em = new ElasticManager();
+			//The hash of the project name is used for the index
 			String index = ElasticJenkinsUtil.getHash(build.getUrl());
-			LOGGER.log(Level.INFO,"Job hash: "+index);
+			try {
+				em.addProjectMapping(index,URLEncoder.encode(build.getUrl(),charset));
+			} catch (UnsupportedEncodingException e) {
+				LOGGER.log(Level.SEVERE,"Charset not supported:"+charset);
+			}
+			LOGGER.log(Level.FINEST,"Job hash: "+index);
 			id = em.addBuild(index,"builds",build);
 
         }
@@ -88,11 +96,7 @@ public class ElasticJenkinsWrapper extends SimpleBuildWrapper {
 	@Override
 	public void setUp(Context context, Run<?, ?> build, FilePath workspace, Launcher launcher, TaskListener listener,
 			EnvVars initialEnvironment) throws IOException, InterruptedException {
-		// Save the build here?
         //Add the disposer. When the build is completed it will call back the tearDown method
-		LOGGER.log(Level.INFO,"Elasticsearch plugin build setUp");
-
-
         context.setDisposer(new DisposerImpl(build));
 		
 	}

@@ -2,8 +2,6 @@ package io.jenkins.plugins.elasticjenkins.entity;
 
 
 
-import hudson.model.ParametersAction;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
@@ -44,7 +42,7 @@ public class GenericBuild {
      * Log output of the job
      */
     @Nullable
-    protected String logOutput;
+    protected String logId;
 
     /**
      * Status of the job
@@ -123,12 +121,12 @@ public class GenericBuild {
         this.parameters = parameters;
     }
 
-    public String getLogOutput() {
-        return logOutput;
+    public String getLogId() {
+        return logId;
     }
 
-    public void setLogOutput(String logOutput) {
-        this.logOutput = logOutput;
+    public void setLogId(String logId) {
+        this.logId = logId;
     }
 
     public String getStatus() {
