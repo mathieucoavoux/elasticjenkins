@@ -84,15 +84,9 @@ public class ElasticManager {
         String eId = build.getId()+"_"+master;
         String uri = url+"/"+index+"/"+type+"/"+eId;
         String elasticSearchId = null;
-        try {
-            StringEntity entity = new StringEntity(json);
+        ElasticsearchResult esr = gson.fromJson(ElasticJenkinsUtil.elasticPost(uri,json),ElasticsearchResult.class);
+        if (esr.getResult().equals("created") || esr.getResult().equals("updated")) elasticSearchId = esr.get_id();
 
-            ElasticsearchResult esr = gson.fromJson(ElasticJenkinsUtil.elasticPost(uri,entity),ElasticsearchResult.class);
-            if (esr.getResult().equals("created") || esr.getResult().equals("updated")) elasticSearchId = esr.get_id();
-        } catch (UnsupportedEncodingException e) {
-            LOGGER.log(Level.SEVERE,"Generic build is not serializable into JSON. Build: "
-                    +genericBuild.getId()+" project:"+genericBuild.getName()+" will not be saved");
-        }
         return elasticSearchId;
     }
 
@@ -123,36 +117,25 @@ public class ElasticManager {
             String typeLog = new SimpleDateFormat("yyyy_MM").format(new Date());
             String logId = null;
             String uriLogs = url + "/" + indexLogs + "/" + typeLog;
-            StringEntity entityLog = null;
-            try {
-                entityLog = new StringEntity("{ \"logs\" : \n" +
-                                 gson.toJson(update,List.class) +
-                        "}");
-                ElasticsearchResult esr2 = gson.fromJson(ElasticJenkinsUtil.elasticPost(uriLogs,entityLog),ElasticsearchResult.class);
-                if (esr2.getResult().equals("created")) logId = esr2.get_id();
-                suffix = typeLog.concat("/"+logId);
-            } catch (UnsupportedEncodingException e) {
-                LOGGER.log(Level.SEVERE,"An unexpected response was received:",e);
-            }
+            String json = "{ \"logs\" : \n" +
+                    gson.toJson(update,List.class) +
+                    "}";
+            ElasticsearchResult esr2 = gson.fromJson(ElasticJenkinsUtil.elasticPost(uriLogs,json),ElasticsearchResult.class);
+            if (esr2.getResult().equals("created")) logId = esr2.get_id();
+            suffix = typeLog.concat("/"+logId);
+
         }
         String uri = url+"/"+index+"/"+type+"/"+id+"/_update";
-        StringEntity entity = null;
-        try {
-            entity = new StringEntity("{\n" +
-                    "  \"doc\": {\n" +
-                    "    \"status\" : \""+status+"\",\n" +
-                    "    \"logId\" : " + "\""+suffix+"\"" +
-                    "  }\n" +
-                    "}");
+        String json = "{\n" +
+                "  \"doc\": {\n" +
+                "    \"status\" : \""+status+"\",\n" +
+                "    \"logId\" : " + "\""+suffix+"\"" +
+                "  }\n" +
+                "}";
 
+        ElasticsearchResult esr = gson.fromJson(ElasticJenkinsUtil.elasticPost(uri,json),ElasticsearchResult.class);
 
-            ElasticsearchResult esr = gson.fromJson(ElasticJenkinsUtil.elasticPost(uri,entity),ElasticsearchResult.class);
-
-            if (esr.getResult().equals("updated")) elasticSearchId = esr.get_id();
-        } catch (UnsupportedEncodingException e) {
-           // LOGGER.log(Level.SEVERE,"Generic build is not serializable into JSON. Build: "
-            //        +genericBuild.getId()+" project:"+genericBuild.getName()+" will not be saved");
-        }
+        if (esr.getResult().equals("updated")) elasticSearchId = esr.get_id();
 
         return elasticSearchId;
     }
@@ -174,23 +157,18 @@ public class ElasticManager {
         if(paginationStart == null)
             paginationStart = "0";
 
-        StringEntity entity = null;
-        try {
-            entity = new StringEntity("{ \"query\" : {\n" +
-                    "  \"match\" : {\n" +
-                    "    \"jenkinsMasterName\" : \""+master+"\" \n" +
-                    "  }\n" +
-                    "},\n" +
-                    " \"size\" : "+paginationSize+",\n" +
-                    " \"from\" : "+paginationStart+",\n" +
-                    " \"sort\" :  { \"_id\" : { \"order\" : \"desc\" } }\n" +
-                    "}");
-        } catch (UnsupportedEncodingException e) {
-            LOGGER.log(Level.SEVERE,"The filter is not in JSON format.");
-            return null;
-        }
+        String json = "{ \"query\" : {\n" +
+                "  \"match\" : {\n" +
+                "    \"jenkinsMasterName\" : \""+master+"\" \n" +
+                "  }\n" +
+                "},\n" +
+                " \"size\" : "+paginationSize+",\n" +
+                " \"from\" : "+paginationStart+",\n" +
+                " \"sort\" :  { \"_id\" : { \"order\" : \"desc\" } }\n" +
+                "}";
 
-        String jsonResponse = ElasticJenkinsUtil.elasticPost(uri,entity);
+
+        String jsonResponse = ElasticJenkinsUtil.elasticPost(uri,json);
 
         Integer total = JsonPath.parse(jsonResponse).read("$.hits.total");
         Integer max = total < paginationSize ? total : paginationSize;
@@ -222,22 +200,16 @@ public class ElasticManager {
                                                          @Nonnull String clusterName) {
         List<ElasticMaster> listMasters = new ArrayList<>();
         String uri = url+"/"+jenkinsManageIndex+"/"+ jenkinsManageClusters +"/_search";
-        StringEntity entity = null;
-        try {
-            entity = new StringEntity("{ \"query\" : { \n" +
-                    " \"bool\" : {\n" +
-                    " \"should\" : [\n" +
-                    "     { \"match\" : { \"jenkinsMasterName\" : \""+masterName+"\" }},\n" +
-                    "     { \"match\" : { \"clusterName\": \""+clusterName+"\"}}\n" +
-                    "     ]\n" +
-                    "}\n" +
-                    "}\n" +
-                    "}");
-        } catch (UnsupportedEncodingException e) {
-            LOGGER.log(Level.SEVERE,"The filter is not in JSON format.");
-            return null;
-        }
-        String jsonResponse = ElasticJenkinsUtil.elasticPost(uri,entity);
+        String json = "{ \"query\" : { \n" +
+                " \"bool\" : {\n" +
+                " \"should\" : [\n" +
+                "     { \"match\" : { \"jenkinsMasterName\" : \""+masterName+"\" }},\n" +
+                "     { \"match\" : { \"clusterName\": \""+clusterName+"\"}}\n" +
+                "     ]\n" +
+                "}\n" +
+                "}\n" +
+                "}";
+        String jsonResponse = ElasticJenkinsUtil.elasticPost(uri,json);
 
         Integer total = JsonPath.parse(jsonResponse).read("$.hits.total");
         for(int i=0;i<total;i++) {
@@ -254,22 +226,17 @@ public class ElasticManager {
                                                      @Nonnull String clusterName) {
         List<String> listIds = new ArrayList();
         String uri = url+"/"+jenkinsManageIndex+"/"+ jenkinsManageClusters +"/_search";
-        StringEntity entity = null;
-        try {
-            entity = new StringEntity("{ \"query\" : { \n" +
-                    " \"bool\" : {\n" +
-                    " \"should\" : [\n" +
-                    "     { \"match\" : { \"jenkinsMasterName\" : \""+masterName+"\" }},\n" +
-                    "     { \"match\" : { \"clusterName\": \""+clusterName+"\"}}\n" +
-                    "     ]\n" +
-                    "}\n" +
-                    "}\n" +
-                    "}");
-        } catch (UnsupportedEncodingException e) {
-            LOGGER.log(Level.SEVERE,"The filter is not in JSON format.");
-            return null;
-        }
-        String jsonResponse = ElasticJenkinsUtil.elasticPost(uri,entity);
+        String json = "{ \"query\" : { \n" +
+                " \"bool\" : {\n" +
+                " \"should\" : [\n" +
+                "     { \"match\" : { \"jenkinsMasterName\" : \""+masterName+"\" }},\n" +
+                "     { \"match\" : { \"clusterName\": \""+clusterName+"\"}}\n" +
+                "     ]\n" +
+                "}\n" +
+                "}\n" +
+                "}";
+
+        String jsonResponse = ElasticJenkinsUtil.elasticPost(uri,json);
 
         Integer total = JsonPath.parse(jsonResponse).read("$.hits.total");
         for(int i=0;i<total;i++) {
@@ -283,36 +250,25 @@ public class ElasticManager {
     }
 
     public void addProjectMapping(@Nonnull String projectHash, @Nonnull String projectEncodedName) {
-        String uri = url+"/"+jenkinsManageMapping;
+        String uri = url+"/"+jenkinsManageIndex+"/"+jenkinsManageMapping;
         //First we check if the hash has been already saved
-        StringEntity entity = null;
-        try {
-            entity = new StringEntity("{ \"query\" : { \n" +
-                    " \"bool\" : {\n" +
-                    " \"should\" : [\n" +
-                    "     { \"match\" : { \"projectHash\" : \""+projectHash+"\" }},\n" +
-                    "     { \"match\" : { \"projectEncodedName\": \""+projectEncodedName+"\"}}\n" +
-                    "     ]\n" +
-                    "}\n" +
-                    "}\n" +
-                    "}");
-        } catch (UnsupportedEncodingException e) {
-            LOGGER.log(Level.SEVERE,"The filter is not in JSON format.");
-            return ;
-        }
-        String jsonResponse = ElasticJenkinsUtil.elasticPost(uri+"/_search",entity);
-        if((Integer) JsonPath.parse(jsonResponse).read("$.hits.total") != 0) {
-            StringEntity entityAdd = null;
-            try {
-                entityAdd = new StringEntity("{\n" +
-                        "\t\"projectHash\": \""+projectHash+"\",\n" +
-                        "\t\"projectEncodedName\": \""+projectEncodedName+"\"\n" +
-                        "}");
-            } catch (UnsupportedEncodingException e) {
-                LOGGER.log(Level.SEVERE,"The filter is not in JSON format.");
-                return ;
-            }
-            ElasticJenkinsUtil.elasticPost(uri+"/",entity);
+        String jsonReq = "{ \"query\" : { \n" +
+                " \"bool\" : {\n" +
+                " \"should\" : [\n" +
+                "     { \"match\" : { \"projectHash\" : \""+projectHash+"\" }},\n" +
+                "     { \"match\" : { \"projectEncodedName\": \""+projectEncodedName+"\"}}\n" +
+                "     ]\n" +
+                "}\n" +
+                "}\n" +
+                "}";
+
+        String jsonResponse = ElasticJenkinsUtil.elasticPost(uri+"/_search",jsonReq);
+        if((Integer) JsonPath.parse(jsonResponse).read("$.hits.total") == 0) {
+            String jsonUpdate = "{\n" +
+                    "\t\"projectHash\": \""+projectHash+"\",\n" +
+                    "\t\"projectEncodedName\": \""+projectEncodedName+"\"\n" +
+                    "}";
+            ElasticJenkinsUtil.elasticPost(uri+"/",jsonUpdate);
         }
     }
 }

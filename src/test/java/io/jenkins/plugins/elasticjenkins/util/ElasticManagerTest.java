@@ -11,11 +11,9 @@ import org.jvnet.hudson.test.JenkinsRule;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -130,6 +128,9 @@ public class ElasticManagerTest  {
 
         //Get pagination
         testGetPaginateBuildHistory();
+
+        //Test add project mapping
+        testAddProjectMapping();
     }
 
 
@@ -229,5 +230,13 @@ public class ElasticManagerTest  {
         for(int i=1;i<10;i++) {
             deleleTest(index,type,Integer.toString(i)+"_"+master);
         }
+    }
+
+    public void testAddProjectMapping() throws UnsupportedEncodingException {
+        ElasticManager em = new ElasticManager();
+        String index = "jenkins_test";
+        String type = "builds";
+        em.addProjectMapping(ElasticJenkinsUtil.getHash(index),URLEncoder.encode(index,"UTF-16"));
+
     }
 }
