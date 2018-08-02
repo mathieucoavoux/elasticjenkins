@@ -82,8 +82,10 @@ public class ElasticJenkinsUtil {
     public static String getProperty(String property) {
         Properties prop = new Properties();
         InputStream input = null;
-        if(!propertiesFile.exists())
+        if(!propertiesFile.exists()) {
+            LOGGER.log(Level.SEVERE, "Properties files doesn't exist:" + propertiesFile.getPath());
             return null;
+        }
         try {
             input = new FileInputStream(propertiesFile);
             prop.load(input);
@@ -237,7 +239,7 @@ public class ElasticJenkinsUtil {
     public static String getHostname() {
         String master = null;
         try {
-            master = InetAddress.getLocalHost().getHostName()+ManagementFactory.getRuntimeMXBean().getName();
+            master = InetAddress.getLocalHost().getHostName();
         } catch (UnknownHostException e) {
             //if the local host name could not be resolved into an address.
             master = "jenkins";

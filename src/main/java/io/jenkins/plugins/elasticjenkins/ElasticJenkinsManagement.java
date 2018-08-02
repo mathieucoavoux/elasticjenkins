@@ -1,6 +1,7 @@
 package io.jenkins.plugins.elasticjenkins;
 
 import com.google.gson.Gson;
+import hudson.Extension;
 import hudson.model.ManagementLink;
 
 import io.jenkins.plugins.elasticjenkins.entity.ElasticMaster;
@@ -24,6 +25,7 @@ import java.net.UnknownHostException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+@Extension
 public class ElasticJenkinsManagement extends ManagementLink {
 
     private static final Logger LOGGER = Logger.getLogger(ElasticJenkinsManagement.class.getName());
@@ -66,7 +68,7 @@ public class ElasticJenkinsManagement extends ManagementLink {
     public String getJenkinsMaster() {
         String master = ElasticJenkinsUtil.getProperty("masterName");
         if(master == null) {
-                master = ElasticJenkinsUtil.getHostname()+ManagementFactory.getRuntimeMXBean().getName();
+                master = ElasticJenkinsUtil.getHostname()+System.currentTimeMillis();
         }
         return master;
     }
@@ -78,6 +80,15 @@ public class ElasticJenkinsManagement extends ManagementLink {
     public String getJenkinsCharset() {
         String charset = ElasticJenkinsUtil.getProperty("charset");
         return charset == null ? "UTF-16" : charset;
+    }
+
+    /**
+     * Get the index name use to store the log output
+     * @return
+     */
+    public String getLogIndex() {
+        String charset = ElasticJenkinsUtil.getProperty("logIndex");
+        return charset == null ? "jenkins_logs" : charset;
     }
 
     /**
