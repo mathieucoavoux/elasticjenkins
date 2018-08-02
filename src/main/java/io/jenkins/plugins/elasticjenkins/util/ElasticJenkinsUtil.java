@@ -160,18 +160,12 @@ public class ElasticJenkinsUtil {
 
     public static String getIdByMaster(@Nonnull String master) {
         String uri = getProperty("persistenceStore")+"/"+indexJenkinsMaster+"/clusters/_search";
-        StringEntity entity = null;
-        try {
-            entity = new StringEntity("{ \"query\" : {\n" +
-                    "  \"match\" : {\n" +
-                    "    \"jenkinsMasterName\" : \""+master+"\" \n" +
-                    "  }\n" +
-                    "}}");
-        } catch (UnsupportedEncodingException e) {
-            LOGGER.log(Level.SEVERE,"The filter is not in JSON format.");
-            return null;
-        }
-        String jsonResponse = ElasticJenkinsUtil.elasticPost(uri,entity);
+        String json = "{ \"query\" : {\n" +
+                "  \"match\" : {\n" +
+                "    \"jenkinsMasterName\" : \""+master+"\" \n" +
+                "  }\n" +
+                "}}";
+        String jsonResponse = ElasticJenkinsUtil.elasticPost(uri,json);
         Integer total = JsonPath.parse(jsonResponse).read("$.hits.total");
         if (total != 1)
             return null;
@@ -182,14 +176,21 @@ public class ElasticJenkinsUtil {
     /**
      * Send POST resquest to Elasticsearch
      * @param uri: URI
-     * @param entity: JSON entity sent in the POST
+     * @param json: JSON sent in the POST
      * @return: JSON result
      */
-    public static String elasticPost(@Nonnull String uri,@Nonnull StringEntity entity) {
+    public static String elasticPost(@Nonnull String uri,@Nonnull String json) {
         String result = null;
         HttpPost httpPost = new HttpPost(uri);
         httpPost.setHeader("Accept","application/json");
         httpPost.setHeader("Content-type","application/json");
+        StringEntity entity = null;
+        try {
+            entity = new StringEntity(json);
+        } catch (UnsupportedEncodingException e) {
+            LOGGER.log(Level.SEVERE,"The filter is not in JSON format.");
+            return null;
+        }
         httpPost.setEntity(entity);
         HttpClientBuilder builder = HttpClientBuilder.create();
         CloseableHttpClient client = builder.build();

@@ -151,16 +151,8 @@ public class ElasticJenkinsManagement extends ManagementLink {
         em.setHostname(hostname);
         Gson gson = new Gson();
         String json = gson.toJson(em);
-        StringEntity entity = null;
-        try {
-            entity = new StringEntity(json);
-            ElasticsearchResult esr = gson.fromJson(ElasticJenkinsUtil.elasticPost(uri,entity),ElasticsearchResult.class);
-            return esr.get_id() != null ? true : false;
-        } catch (UnsupportedEncodingException e) {
-            LOGGER.log(Level.SEVERE,"Entity is not serializable");
-        }
-
-        return false;
+        ElasticsearchResult esr = gson.fromJson(ElasticJenkinsUtil.elasticPost(uri,json),ElasticsearchResult.class);
+        return esr.get_id() != null ? true : false;
     }
 
 }
