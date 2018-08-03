@@ -3,7 +3,6 @@
          xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson"
          xmlns:f="/lib/form" xmlns:i="jelly:fmt">
 
-    <st:include page="sidepanel.jelly" it="${it.build}"/>
     <style>
         .notification{padding:.75rem 1.25rem;margin-bottom:1rem;border:1px solid transparent;border-radius:.25rem}
         .notification-danger{background-color:#f2dede;border-color:#ebcccc;color:#a94442}
@@ -30,7 +29,9 @@
     </style>
 
     <l:layout >
-        <st:include page="sidepanel.jelly" it="${it.build}"/>
-
+        <st:include it="${app}" page="sidepanel"/>
+        <j:forEach var="item" items="${it.getPaginatedHistory('builds',5,'0')}">
+                        ${item.getName()},${item.getId()}
+        </j:forEach>
     </l:layout>
 </j:jelly>

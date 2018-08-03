@@ -116,10 +116,11 @@ public class ElasticManager {
         if (logs != null ) {
             String typeLog = new SimpleDateFormat("yyyy_MM").format(new Date());
             String logId = null;
-            String uriLogs = url + "/" + indexLogs + "/" + typeLog;
+            String uriLogs = url + "/" + indexLogs + "/" + typeLog+"/";
             String json = "{ \"logs\" : \n" +
                     gson.toJson(update,List.class) +
                     "}";
+            LOGGER.log(Level.FINEST,"URI: {0}, json: {1}", new Object[]{uriLogs,json});
             ElasticsearchResult esr2 = gson.fromJson(ElasticJenkinsUtil.elasticPost(uriLogs,json),ElasticsearchResult.class);
             if (esr2.getResult().equals("created")) logId = esr2.get_id();
             suffix = typeLog.concat("/"+logId);
@@ -133,6 +134,7 @@ public class ElasticManager {
                 "  }\n" +
                 "}";
 
+        LOGGER.log(Level.FINEST,"Update uri: {0}, json: {1}", new Object[]{uri,json});
         ElasticsearchResult esr = gson.fromJson(ElasticJenkinsUtil.elasticPost(uri,json),ElasticsearchResult.class);
 
         if (esr.getResult().equals("updated")) elasticSearchId = esr.get_id();
@@ -148,7 +150,7 @@ public class ElasticManager {
      * @param paginationStart: starts from where
      * @return: list of builds
      */
-    protected List<GenericBuild> getPaginateBuildHistory(@Nonnull String index, @Nonnull String type,
+    public List<GenericBuild> getPaginateBuildHistory(@Nonnull String index, @Nonnull String type,
                                                          @Nonnull Integer paginationSize, @Nullable String paginationStart) {
 
         List<GenericBuild> listBuilds = new ArrayList<>();
@@ -170,11 +172,13 @@ public class ElasticManager {
 
         String jsonResponse = ElasticJenkinsUtil.elasticPost(uri,json);
 
+        LOGGER.log(Level.FINEST,"jsonResponse:"+jsonResponse);
+
         Integer total = JsonPath.parse(jsonResponse).read("$.hits.total");
         Integer max = total < paginationSize ? total : paginationSize;
 
         for(int i=0;i<max;i++) {
-
+            LOGGER.log(Level.FINEST,"Index: {0}, content: {1}", new Object[]{i,JsonPath.parse(jsonResponse).read("$.hits.hits["+i+"]._source").toString()});
             GenericBuild genericBuild =  gson.fromJson(JsonPath.parse(jsonResponse).read(
                     "$.hits.hits["+i+"]._source").toString(),GenericBuild.class);
             listBuilds.add(genericBuild);
@@ -263,12 +267,28 @@ public class ElasticManager {
                 "}";
 
         String jsonResponse = ElasticJenkinsUtil.elasticPost(uri+"/_search",jsonReq);
-        if((Integer) JsonPath.parse(jsonResponse).read("$.hits.total") == 0) {
+        LOGGER.log(Level.INFO,"Uri {0}, return response: {1}",new Object[]{uri,jsonResponse});
+        Integer total = JsonPath.parse(jsonResponse).read("$.hits.total");
+        if(total == 0) {
             String jsonUpdate = "{\n" +
                     "\t\"projectHash\": \""+projectHash+"\",\n" +
                     "\t\"projectEncodedName\": \""+projectEncodedName+"\"\n" +
                     "}";
-            ElasticJenkinsUtil.elasticPost(uri+"/",jsonUpdate);
+            LOGGER.log(Level.FINEST,"Mapping uri: {0}, json : {1}",new Object[]{uri,jsonUpdate});
+            ElasticJenkinsUtil.elasticPost(uri.concat("/"),jsonUpdate);
         }
+    }
+
+    public void createManageIndex() {
+        String uri = url+"/"+jenkinsManageIndex;
+        String json = "{\n" +
+                "    \"settings\" : {\n" +
+                "        \"index\" : {\n" +
+                "            \"number_of_shards\" : 3, \n" +
+                "            \"number_of_replicas\" : 2 \n" +
+                "        }\n" +
+                "    }\n" +
+                "}";
+        ElasticJenkinsUtil.elasticPut(uri,json);
     }
 }

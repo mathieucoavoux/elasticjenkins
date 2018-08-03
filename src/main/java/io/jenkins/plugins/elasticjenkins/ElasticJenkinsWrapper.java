@@ -56,9 +56,9 @@ public class ElasticJenkinsWrapper extends SimpleBuildWrapper {
 	        //We save the build here when it starts
 			ElasticManager em = new ElasticManager();
 			//The hash of the project name is used for the index
-			String index = ElasticJenkinsUtil.getHash(build.getUrl());
+			String index = ElasticJenkinsUtil.getHash(build.getUrl().split(build.getId())[0]);
 			try {
-				em.addProjectMapping(index,URLEncoder.encode(build.getUrl(),charset));
+				em.addProjectMapping(index,URLEncoder.encode(build.getUrl().split(build.getId())[0],charset));
 			} catch (UnsupportedEncodingException e) {
 				LOGGER.log(Level.SEVERE,"Charset not supported:"+charset);
 			}
@@ -75,9 +75,20 @@ public class ElasticJenkinsWrapper extends SimpleBuildWrapper {
 				LOGGER.log(Level.INFO,"Elasticsearch plugin build tearDown disposerImpl");
 				LOGGER.log(Level.INFO,"Id:"+id);
 				ElasticManager em = new ElasticManager();
-				String index = ElasticJenkinsUtil.getHash(build.getUrl());
+				String index = ElasticJenkinsUtil.getHash(build.getUrl().split(build.getId())[0]);
 				int maxLines = (int) Files.lines(build.getLogFile().toPath()).count();
-				id = em.updateBuild(index,"builds",build,id,build.getResult().toString(),build.getLog(maxLines));
+				String status = "";
+				if (build instanceof Run) {
+					if(build.getResult() != null) {
+						LOGGER.log(Level.FINEST, "Is the build completed : {0} ",new Object[] {build.getResult().toString()});
+						status = build.getResult().toString();
+					}else {
+						LOGGER.log(Level.FINEST,"No result set, build looks like : {0}",new Object[] {build.toString()});
+						status = "SUCCESS";
+					}
+
+				}
+				id = em.updateBuild(index,"builds",build,id,status,build.getLog(maxLines));
             }
         }
     }

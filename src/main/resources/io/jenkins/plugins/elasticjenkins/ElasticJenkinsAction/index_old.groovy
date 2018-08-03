@@ -41,7 +41,7 @@ l.layout(title: _("all.changes.title", my.project.name)) {
     st.include(page: "sidepanel.jelly", it: my.project)
     l.main_panel() {
         h1(_("All Changes"))
-        st.include(page: "main.groovy", it: my)
+        st.include(page: "main_old_old.groovy", it: my)
     }
 }
 

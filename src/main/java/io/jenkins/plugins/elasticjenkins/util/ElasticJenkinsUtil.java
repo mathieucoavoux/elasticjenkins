@@ -7,10 +7,7 @@ import com.jayway.jsonpath.JsonPath;
 import io.jenkins.plugins.elasticjenkins.entity.ElasticMaster;
 import io.jenkins.plugins.elasticjenkins.entity.ElasticsearchResult;
 import jenkins.model.Jenkins;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpDelete;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.*;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -62,6 +59,7 @@ public class ElasticJenkinsUtil {
      * @return: hash of the job
      */
     public static String getHash(@Nonnull  String url) {
+        LOGGER.log(Level.FINEST,"URL: "+url);
         String hash = null;
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
@@ -71,6 +69,7 @@ public class ElasticJenkinsUtil {
         } catch (NoSuchAlgorithmException e) {
             LOGGER.log(Level.SEVERE,"I do NOT know the algorithm for the hashing");
         }
+        LOGGER.log(Level.FINEST,"Hash:"+hash);
         return hash;
     }
 
@@ -234,6 +233,39 @@ public class ElasticJenkinsUtil {
                 LOGGER.log(Level.WARNING,"Cannot close the connection");
             }
         }
+        return result;
+    }
+
+    public static String elasticPut(@Nonnull String uri,@Nonnull String json) {
+        String result = null;
+        HttpPut httpPut = new HttpPut(uri);
+        httpPut.setHeader("Accept","application/json");
+        httpPut.setHeader("Content-type","application/json");
+        StringEntity entity = null;
+        try {
+            entity = new StringEntity(json);
+        } catch (UnsupportedEncodingException e) {
+            LOGGER.log(Level.SEVERE,"The filter is not in JSON format.");
+            return null;
+        }
+        httpPut.setEntity(entity);
+
+        HttpClientBuilder builder = HttpClientBuilder.create();
+        CloseableHttpClient client = builder.build();
+        try {
+            CloseableHttpResponse response = client.execute(httpPut);
+            result = EntityUtils.toString(response.getEntity());
+        } catch (IOException e) {
+            LOGGER.log(Level.SEVERE,"An unexpected response was received:",e);
+        }finally {
+            try {
+                client.close();
+            } catch (IOException e) {
+                LOGGER.log(Level.WARNING,"Cannot close the connection");
+            }
+        }
+
+
         return result;
     }
 

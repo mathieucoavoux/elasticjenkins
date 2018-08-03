@@ -117,6 +117,8 @@ public class ElasticManagerTest  {
      */
     @Test
     public void allTests() throws IOException, InterruptedException {
+        //Create index
+        createIndex();
         //Add build
         addBuild();
 
@@ -131,6 +133,11 @@ public class ElasticManagerTest  {
 
         //Test add project mapping
         testAddProjectMapping();
+    }
+
+    public void createIndex() {
+        ElasticManager em = new ElasticManager();
+        em.createManageIndex();
     }
 
 
