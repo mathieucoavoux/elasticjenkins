@@ -28,10 +28,60 @@
 
     </style>
 
-    <l:layout >
+    <l:layout  norefresh="true">
         <st:include it="${app}" page="sidepanel"/>
-        <j:forEach var="item" items="${it.getPaginatedHistory('builds',5,'0')}">
-                        ${item.getName()},${item.getId()}
-        </j:forEach>
+        <l:main-panel>
+            <script type="text/javascript">
+                    function getPaginatedHistory(type,paginationSize,paginationStart) {
+                        var numberPage = document.getElementById("number_pages");
+                        /*
+                            var eja = <st:bind value="${it}" />;
+                            eja.getPaginatedHistory(type,paginationSize,paginationStart,function(t) {
+
+                            });
+                        */
+                    }
+            </script>
+        <h1>${it.displayName}</h1>
+            <div id="number_pages" name="number_pages" style="display:none">0</div>
+        <table class="table">
+        <thead>
+            <tr>
+                <th><input type="checkbox" onclick="check_all()" id="chk-all" name="all" value="all" /></th>
+                <th>Id</th>
+                <th>Project</th>
+                <th>Status</th>
+                <th>Parameters</th>
+                <th>Executed on</th>
+            </tr>
+        </thead>
+        <tbody>
+
+            <j:forEach var="item" items="${it.getPaginatedHistory('builds',20,'0')}">
+                <j:set var="bid" value="${item.getId()}" />
+                <j:set var="bname" value="${item.getName()}" />
+                <tr>
+                    <th scope="row">
+                        <!-- <j:if test="${!build.getRecoverState()}"> -->
+                            <input type="checkbox" id="chk-${bid}" name="chk-id" value="${uniqueid},${bname},${bid}" />
+                        <!-- </j:if> -->
+                        <!-- <j:if test="${build.getRecoverState()}">
+                            <input type="checkbox" id="chk-${bid}" name="chk-id" value="${uniqueid},${bname},${bid}" disabled="enabled" />
+                        </j:if> -->
+                    </th>
+                    <td>${bid}</td>
+                    <td>${bname}</td>
+                    <td>${item.getStatus()}</td>
+                    <td>
+                        <j:forEach var="palist" items="${item.getParameters()}">
+                            <pre>${palist.getName()} : ${palist.getValue()}</pre>
+                        </j:forEach>
+                    </td>
+                    <td>${item.getExecutedOn()}</td>
+                </tr>
+            </j:forEach>
+        </tbody>
+        </table>
+        </l:main-panel>
     </l:layout>
 </j:jelly>

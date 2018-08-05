@@ -7,6 +7,7 @@ import io.jenkins.plugins.elasticjenkins.entity.ElasticMaster;
 import io.jenkins.plugins.elasticjenkins.entity.GenericBuild;
 import io.jenkins.plugins.elasticjenkins.util.ElasticJenkinsUtil;
 import io.jenkins.plugins.elasticjenkins.util.ElasticManager;
+import org.kohsuke.stapler.bind.JavaScriptMethod;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
@@ -41,7 +42,11 @@ public class ElasticJenkinsAction implements Action {
         return project;
     }
 
-    public List<GenericBuild> getPaginatedHistory(@Nonnull String type,@Nonnull Integer paginationSize,@Nonnull String paginationStart) {
+    @JavaScriptMethod
+    public List<GenericBuild> getPaginatedHistory(@Nonnull String type,
+                                                  @Nonnull Integer paginationSize,@Nonnull String paginationStart) {
+        //TODO: Add a parameter for the cluster name and master name
+        //TODO: Add a method to search by parameters
         ElasticManager elasticManager = new ElasticManager();
         String index = ElasticJenkinsUtil.getHash(project.getUrl());
        return  elasticManager.getPaginateBuildHistory(index,type,paginationSize,paginationStart);

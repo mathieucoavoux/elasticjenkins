@@ -123,10 +123,10 @@ public class ElasticManagerTest  {
         addBuild();
 
         //Update build
-        updateBuild();
+        //updateBuild();
 
         //Search by id
-        searchById();
+        //searchById();
 
         //Get pagination
         testGetPaginateBuildHistory();

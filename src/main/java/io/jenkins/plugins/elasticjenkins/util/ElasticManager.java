@@ -127,12 +127,17 @@ public class ElasticManager {
 
         }
         String uri = url+"/"+index+"/"+type+"/"+id+"/_update";
-        String json = "{\n" +
-                "  \"doc\": {\n" +
-                "    \"status\" : \""+status+"\",\n" +
-                "    \"logId\" : " + "\""+suffix+"\"" +
-                "  }\n" +
-                "}";
+        String json = null;
+        try {
+            json = "{\n" +
+                    "  \"doc\": {\n" +
+                    "    \"status\" : \""+status+"\",\n" +
+                    "    \"logId\" : " + "\""+URLEncoder.encode(suffix,charset)+"\"" +
+                    "  }\n" +
+                    "}";
+        } catch (UnsupportedEncodingException e) {
+            LOGGER.log(Level.SEVERE,"Unable to encode URL");
+        }
 
         LOGGER.log(Level.FINEST,"Update uri: {0}, json: {1}", new Object[]{uri,json});
         ElasticsearchResult esr = gson.fromJson(ElasticJenkinsUtil.elasticPost(uri,json),ElasticsearchResult.class);
@@ -173,10 +178,12 @@ public class ElasticManager {
         String jsonResponse = ElasticJenkinsUtil.elasticPost(uri,json);
 
         LOGGER.log(Level.FINEST,"jsonResponse:"+jsonResponse);
+        //LOGGER.log(Level.INFO,"jsin hits: "+JsonPath.parse(jsonResponse).read("$.hits.hits").toString());
+        //List<GenericBuild> listBuilds = gson.fromJson(JsonPath.parse(jsonResponse).read("$.hits.hits").toString(),List.class);
 
-        Integer total = JsonPath.parse(jsonResponse).read("$.hits.total");
-        Integer max = total < paginationSize ? total : paginationSize;
-
+//        Integer total = JsonPath.parse(jsonResponse).read("$.hits.total");
+//        Integer max = total < paginationSize ? total : paginationSize;
+          Integer max = JsonPath.parse(jsonResponse).read("$.hits.hits.length()");
         for(int i=0;i<max;i++) {
             LOGGER.log(Level.FINEST,"Index: {0}, content: {1}", new Object[]{i,JsonPath.parse(jsonResponse).read("$.hits.hits["+i+"]._source").toString()});
             GenericBuild genericBuild =  gson.fromJson(JsonPath.parse(jsonResponse).read(
