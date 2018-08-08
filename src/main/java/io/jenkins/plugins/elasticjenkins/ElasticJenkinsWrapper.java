@@ -25,7 +25,7 @@ import jenkins.tasks.SimpleBuildWrapper;
 public class ElasticJenkinsWrapper extends SimpleBuildWrapper {
 
 	private static final Logger LOGGER = Logger.getLogger(ElasticJenkins.class.getName());
-	private static String charset = ElasticJenkinsUtil.getProperty("charset");
+	private static String charset = ElasticJenkinsUtil.getProperty("elasticCharset");
 	
 	@DataBoundConstructor
 	public ElasticJenkinsWrapper(){}

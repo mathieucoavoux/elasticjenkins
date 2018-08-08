@@ -35,7 +35,7 @@ public class ElasticManager {
 
     protected String url = ElasticJenkinsUtil.getProperty("persistenceStore");
     protected String master = ElasticJenkinsUtil.getProperty("masterName");
-    protected String charset = ElasticJenkinsUtil.getProperty("charset");
+    protected String charset = ElasticJenkinsUtil.getProperty("elasticCharset");
 
     protected Gson gson = new GsonBuilder().create();
 
@@ -48,6 +48,8 @@ public class ElasticManager {
         genericBuild.setName(ElasticJenkinsUtil.convertUrlToFullName(build.getUrl()));
         genericBuild.setId(build.getId());
         //genericBuild.setStartDate(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(build.getStartTimeInMillis())));
+
+        genericBuild.setStartDate(System.currentTimeMillis());
 
         //genericBuild.setParameters(build.getActions(ParametersAction.class));
         List<ParametersAction> parametersActions = build.getActions(ParametersAction.class);
@@ -103,7 +105,8 @@ public class ElasticManager {
             List<String> list = Files.readAllLines(build.getLogFile().toPath());
 
             for(String oneLine : logs) {
-                update.add(URLEncoder.encode(oneLine,charset));
+                //update.add(URLEncoder.encode(oneLine,charset));
+                update.add(oneLine);
                 LOGGER.log(Level.INFO,"Line:"+oneLine);
             }
             //genericBuild.setLogId(update);
@@ -132,7 +135,8 @@ public class ElasticManager {
             json = "{\n" +
                     "  \"doc\": {\n" +
                     "    \"status\" : \""+status+"\",\n" +
-                    "    \"logId\" : " + "\""+URLEncoder.encode(suffix,charset)+"\"" +
+                    "    \"logId\" : " + "\""+URLEncoder.encode(suffix,charset)+"\",\n" +
+                    "   \"endDate\" : \""+System.currentTimeMillis()+"\"" +
                     "  }\n" +
                     "}";
         } catch (UnsupportedEncodingException e) {
@@ -194,6 +198,30 @@ public class ElasticManager {
         return listBuilds;
     }
 
+    public List<GenericBuild> getNewResults(@Nonnull String index, @Nonnull String type,
+                                           @Nonnull String lastFetch) {
+        List<GenericBuild> listBuilds = new ArrayList<>();
+        String uri = url+"/"+index+"/"+type+"/_search";
+        String json = "{  \n" +
+                "   \"query\":{  \n" +
+                "      \"range\":{  \n" +
+                "         \"startDate\":{  \n" +
+                "            \"gte\":"+lastFetch+"\n" +
+                "         }\n" +
+                "      }\n" +
+                "   }\n" +
+                "}";
+        String jsonResponse = ElasticJenkinsUtil.elasticPost(uri,json);
+        Integer max = JsonPath.parse(jsonResponse).read("$.hits.hits.length()");
+        for(int i=0;i<max;i++) {
+            LOGGER.log(Level.FINEST,"Index: {0}, content: {1}", new Object[]{i,JsonPath.parse(jsonResponse).read("$.hits.hits["+i+"]._source").toString()});
+            GenericBuild genericBuild =  gson.fromJson(JsonPath.parse(jsonResponse).read(
+                    "$.hits.hits["+i+"]._source").toString(),GenericBuild.class);
+            listBuilds.add(genericBuild);
+        }
+
+        return listBuilds;
+    }
 
     protected GenericBuild searchById(@Nonnull String index, @Nonnull String type,@Nonnull String id) {
 

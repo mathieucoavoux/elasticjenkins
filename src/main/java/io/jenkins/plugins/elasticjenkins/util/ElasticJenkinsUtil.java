@@ -32,6 +32,7 @@ public class ElasticJenkinsUtil {
     protected static File propertiesFile = new File(Jenkins.getInstance().getRootDir()+"/elasticjenkins.properties");
 
     private static String indexJenkinsMaster = "jenkins_manage";
+    protected static String charset = ElasticJenkinsUtil.getProperty("elasticCharset");
 
     /**
      * Get the job url to take the project name as the project display name can contain
@@ -117,7 +118,7 @@ public class ElasticJenkinsUtil {
         Properties props = new Properties();
         props.setProperty("masterName", masterName);
         props.setProperty("persistenceStore", persistenceStore);
-        props.setProperty("charset", charset);
+        props.setProperty("elasticCharset", charset);
         props.setProperty("jenkins_logs",logIndex);
         try {
             out = new FileOutputStream(propertiesFile);
@@ -183,13 +184,8 @@ public class ElasticJenkinsUtil {
         HttpPost httpPost = new HttpPost(uri);
         httpPost.setHeader("Accept","application/json");
         httpPost.setHeader("Content-type","application/json");
-        StringEntity entity = null;
-        try {
-            entity = new StringEntity(json);
-        } catch (UnsupportedEncodingException e) {
-            LOGGER.log(Level.SEVERE,"The filter is not in JSON format.");
-            return null;
-        }
+        LOGGER.log(Level.FINEST,"Charset : "+charset);
+        StringEntity entity = new StringEntity(json,charset);
         httpPost.setEntity(entity);
         HttpClientBuilder builder = HttpClientBuilder.create();
         CloseableHttpClient client = builder.build();

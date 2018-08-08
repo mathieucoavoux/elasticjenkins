@@ -3,48 +3,40 @@
          xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson"
          xmlns:f="/lib/form" xmlns:i="jelly:fmt">
 
-    <style>
-        .notification{padding:.75rem 1.25rem;margin-bottom:1rem;border:1px solid transparent;border-radius:.25rem}
-        .notification-danger{background-color:#f2dede;border-color:#ebcccc;color:#a94442}
-        .table{border-collapse:collapse!important}.table td,.table th{background-color:#fff!important}.table-bordered td,
-
-
-        .table-bordered th{border:1px solid #ddd!important}}html{-webkit-box-sizing:border-box;box-sizing:border-box}*,
-        html{-ms-overflow-style:scrollbar;-webkit-tap-highlight-color:transparent}
-        body{
-        font-family:-apple-system,system-ui,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:1rem;font-weight:400;
-        line-height:1.5;color:#292b2c;background-color:#fff
-        }[tabindex="-1"]:focus{outline:0!important}h1,h2,h3,h4,h5,h6{margin-top:0;margin-bottom:.5rem}
-        p{margin-top:0;margin-bottom:1rem}abbr[data-original-title],abbr[title]{cursor:help}address{margin-bottom:1rem;font-style:normal;line-height:inherit}
-        dl,ol,ul{margin-top:0;margin-bottom:1rem}ol ol,ol ul,ul ol,ul ul{margin-bottom:0}dt{font-weight:700}dd{margin-bottom:.5rem;margin-left:0}blockquote{margin:0 0 1rem}a{color:#0275d8;text-decoration:none}a:focus,a:hover{color:#014c8c;text-decoration:underline}a:not([href]):not([tabindex]){color:inherit;text-decoration:none}a:not([href]):not([tabindex]):focus,a:not([href]):not([tabindex]):hover{color:inherit;text-decoration:none}a:not([href]):not([tabindex]):focus{outline:0}pre{margin-top:0;margin-bottom:1rem;overflow:auto}figure{margin:0 0 1rem}img{vertical-align:middle}[role=button]{cursor:pointer}[role=button],a,area,button,input,label,select,summary,textarea{-ms-touch-action:manipulation;touch-action:manipulation}table{border-collapse:collapse;background-color:transparent}caption{padding-top:.75rem;padding-bottom:.75rem;color:#636c72;text-align:left;caption-side:bottom}th{text-align:left}label{display:inline-block;margin-bottom:.5rem}button:focus{outline:1px dotted;outline:5px auto -webkit-focus-ring-color}button,input,select,textarea{line-height:inherit}input[type=checkbox]:disabled,input[type=radio]:disabled{cursor:not-allowed}input[type=date],input[type=time],input[type=datetime-local],input[type=month]{-webkit-appearance:listbox}textarea{resize:vertical}fieldset{min-width:0;padding:0;margin:0;border:0}legend{display:block;width:100%;padding:0;margin-bottom:.5rem;font-size:1.5rem;line-height:inherit}input[type=search]{-webkit-appearance:none}output{display:inline-block}[hidden]{display:none!important}p{margin-top:0;margin-bottom:1rem}abbr[data-original-title],abbr[title]{cursor:help}address{margin-bottom:1rem;font-style:normal;line-height:inherit}
-
-        .table{width:100%;max-width:100%;margin-bottom:1rem}.table td,.table th{padding:.75rem;vertical-align:top;border-top:1px solid #eceeef}
-        .table thead th{vertical-align:bottom;border-bottom:2px solid #eceeef}.table tbody+tbody{border-top:2px solid #eceeef}
-        .table .table{background-color:#fff}.table-sm td,.table-sm th{padding:.3rem}
-        .table-bordered{border:1px solid #eceeef}.table-bordered td,.table-bordered th{border:1px solid #eceeef}.table-bordered thead td,
-        .table-bordered thead th{border-bottom-width:2px}.table-striped tbody tr:nth-of-type(odd){background-color:rgba(0,0,0,.05)}
-        .table-hover tbody tr:hover{background-color:rgba(0,0,0,.075)}.table-active,.table-active>td,.table-active>th{background-color:rgba(0,0,0,.075)}
-        .table-hover .table-active:hover{background-color:rgba(0,0,0,.075)}.table-hover .table-active:hover>td,.table-hover .table-active:hover>th{background-color:rgba(0,0,0,.075)}
-
-    </style>
 
     <l:layout  norefresh="true">
+        <link type="text/css" href="${rootURL}/plugin/elasticjenkins/css/bootstrap.min.css" rel="stylesheet"/>
         <st:include it="${app}" page="sidepanel"/>
         <l:main-panel>
+
+            <script src='${rootURL}/plugin/elasticjenkins/js/utils.js'></script>
             <script type="text/javascript">
-                    function getPaginatedHistory(type,paginationSize,paginationStart) {
-                        var numberPage = document.getElementById("number_pages");
-                        /*
+                    var number = 0;
+                    var last_fetch = new Date().getTime();
+                    function getPaginatedHistory(type) {
+                        var divNumberPage = document.getElementById("number_pages");
+                            number = number + 20;
                             var eja = <st:bind value="${it}" />;
-                            eja.getPaginatedHistory(type,paginationSize,paginationStart,function(t) {
+                            eja.getPagninatedHistoryJson(type,'20',number,function(t) {
+                                   array = t.responseObject();
+                                    addContent(array,'after');
 
                             });
-                        */
+
+                           eja.getNewResultsJson(type,last_fetch,function(t) {
+                              array = t.responseObject();
+                               addContent(array,'before');
+
+                           });
+                        last_fetch = new Date().getTime();
+
                     }
             </script>
         <h1>${it.displayName}</h1>
-            <div id="number_pages" name="number_pages" style="display:none">0</div>
-        <table class="table">
+
+
+
+        <table class="table" id="table_result" name="table_result">
         <thead>
             <tr>
                 <th><input type="checkbox" onclick="check_all()" id="chk-all" name="all" value="all" /></th>
@@ -60,10 +52,11 @@
             <j:forEach var="item" items="${it.getPaginatedHistory('builds',20,'0')}">
                 <j:set var="bid" value="${item.getId()}" />
                 <j:set var="bname" value="${item.getName()}" />
+                <j:set var="master" value="${item.getJenkinsMasterName()}" />
                 <tr>
                     <th scope="row">
                         <!-- <j:if test="${!build.getRecoverState()}"> -->
-                            <input type="checkbox" id="chk-${bid}" name="chk-id" value="${uniqueid},${bname},${bid}" />
+                            <input type="checkbox" id="chk-${bid}" name="chk-id" value="${master},${bname},${bid}" />
                         <!-- </j:if> -->
                         <!-- <j:if test="${build.getRecoverState()}">
                             <input type="checkbox" id="chk-${bid}" name="chk-id" value="${uniqueid},${bname},${bid}" disabled="enabled" />
@@ -82,6 +75,11 @@
             </j:forEach>
         </tbody>
         </table>
+        <div class="row">
+            <div class="col-md-4"></div>
+            <div class="col-md-4"> <button onclick="getPaginatedHistory('builds')" type="button" class="btn btn-lg btn-outline-info">Get more builds</button></div>
+            <div class="col-md-4"></div>
+        </div>
         </l:main-panel>
     </l:layout>
 </j:jelly>

@@ -24,13 +24,13 @@ public class GenericBuild {
      * When the build start
      */
     @Nonnull
-    protected String startDate;
+    protected Long startDate;
 
     /**
      * When the job is completed
      */
     @Nullable
-    protected String endDate;
+    protected Long endDate;
 
     /**
      * Parameters set for the built
@@ -97,19 +97,19 @@ public class GenericBuild {
         this.name = name;
     }
 
-    public String getStartDate() {
+    public Long getStartDate() {
         return startDate;
     }
 
-    public void setStartDate(String startDate) {
+    public void setStartDate(Long startDate) {
         this.startDate = startDate;
     }
 
-    public String getEndDate() {
+    public Long getEndDate() {
         return endDate;
     }
 
-    public void setEndDate(String endDate) {
+    public void setEndDate(Long endDate) {
         this.endDate = endDate;
     }
 

@@ -73,7 +73,7 @@ public class ElasticManagerTest  {
 
         Run build = Mockito.mock(Run.class);
 
-        StringParameterValue p1 = new StringParameterValue("parameter1","value1");
+        StringParameterValue p1 = new StringParameterValue("parameter1","éeù");
         StringParameterValue p2 = new StringParameterValue("parameter2","value2");
         ParametersAction pa =  new ParametersAction(p1,p2);
 
@@ -104,8 +104,8 @@ public class ElasticManagerTest  {
 
     @Before
     public void setUp() throws IOException, InterruptedException {
+        //ElasticJenkinsUtil.writeProperties(master,url,"UTF-16",logIndex);
         ElasticJenkinsUtil.writeProperties(master,url,"UTF-16",logIndex);
-
     }
 
     /**
@@ -123,10 +123,10 @@ public class ElasticManagerTest  {
         addBuild();
 
         //Update build
-        //updateBuild();
+        updateBuild();
 
         //Search by id
-        //searchById();
+        searchById();
 
         //Get pagination
         testGetPaginateBuildHistory();
@@ -162,7 +162,7 @@ public class ElasticManagerTest  {
         String fileName = "testUpdate.log";
         String idElastic = em.addBuild(index,type,build);
         List<String> logs = new ArrayList<>();
-        logs.add("Line1");
+        logs.add("éer");
         logs.add("Line2");
         File file = new File(root+"/"+fileName);
         if(file.exists()) file.delete();
@@ -212,7 +212,7 @@ public class ElasticManagerTest  {
         GenericBuild genericBuild = em.searchById(index,type,idElastic);
         String idLog = genericBuild.getLogId();
         assertTrue(idLog != null);
-        List<String> outputList = em.getLogOutput(idLog);
+        List<String> outputList = em.getLogOutput(URLDecoder.decode(idLog,"UTF-16"));
         for(int ind=0;ind<outputList.size();ind++) {
             assertEquals(logs.get(ind),URLDecoder.decode(outputList.get(ind),"UTF-16"));
         }
