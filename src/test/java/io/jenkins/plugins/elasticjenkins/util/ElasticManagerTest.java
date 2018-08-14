@@ -36,6 +36,7 @@ public class ElasticManagerTest  {
 
 
     public static String master = "MASTERNAME";
+    public static String clusterName = "CLUSTER_NAME";
     public String uniqueId = "20170428";
     public String title = "PROJECT_NAME";
     public String logIndex = "jenkins_logs";
@@ -105,7 +106,7 @@ public class ElasticManagerTest  {
     @Before
     public void setUp() throws IOException, InterruptedException {
         //ElasticJenkinsUtil.writeProperties(master,url,"UTF-16",logIndex);
-        ElasticJenkinsUtil.writeProperties(master,url,"UTF-16",logIndex);
+        ElasticJenkinsUtil.writeProperties(master,clusterName , url,"UTF-16",logIndex );
     }
 
     /**
@@ -231,7 +232,7 @@ public class ElasticManagerTest  {
         }
         //Let elasticsearch save the entries correctly
         Thread.sleep(2000);
-        List<GenericBuild> list = em.getPaginateBuildHistory(index,type, 2, "5");
+        List<GenericBuild> list = em.getPaginateBuildHistory(index,type, , 2, "5");
         assertEquals("4",list.get(0).getId());
         assertEquals("3",list.get(1).getId());
         for(int i=1;i<10;i++) {

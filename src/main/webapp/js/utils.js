@@ -1,6 +1,6 @@
 function addContent(json,location) {
     var array = JSON.parse(json);
-    var table = document.getElementById("table_result");
+    var table = document.getElementById("result_tbody");
     for(i=0;i<array.length;i++) {
 
         var tr = document.createElement("tr");

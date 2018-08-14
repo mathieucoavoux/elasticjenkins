@@ -2,10 +2,7 @@ package io.jenkins.plugins.elasticjenkins.util;
 
 
 
-import com.google.gson.Gson;
 import com.jayway.jsonpath.JsonPath;
-import io.jenkins.plugins.elasticjenkins.entity.ElasticMaster;
-import io.jenkins.plugins.elasticjenkins.entity.ElasticsearchResult;
 import jenkins.model.Jenkins;
 import org.apache.http.client.methods.*;
 import org.apache.http.entity.StringEntity;
@@ -16,7 +13,6 @@ import org.apache.http.util.EntityUtils;
 import javax.annotation.Nonnull;
 import javax.xml.bind.DatatypeConverter;
 import java.io.*;
-import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
@@ -31,7 +27,7 @@ public class ElasticJenkinsUtil {
 
     protected static File propertiesFile = new File(Jenkins.getInstance().getRootDir()+"/elasticjenkins.properties");
 
-    private static String indexJenkinsMaster = "jenkins_manage";
+    private static String indexJenkinsCluster = "jenkins_manage_clusters";
     protected static String charset = ElasticJenkinsUtil.getProperty("elasticCharset");
 
     /**
@@ -106,17 +102,20 @@ public class ElasticJenkinsUtil {
 
     /**
      * Write properties used by ElasticJenkins plugin to the properties file
-     * @param masterName: name of the Jenkins master
-     * @param persistenceStore: URL of the persistence store
-     * @param charset: charset used in the log output encoding
+     * @param masterName : name of the Jenkins master
+     * @param clusterName
+     * @param persistenceStore : URL of the persistence store
+     * @param charset : charset used in the log output encoding
      * @return: boolean
      */
     public static synchronized boolean writeProperties(@Nonnull String masterName,
-                                                       @Nonnull String persistenceStore,@Nonnull String charset,
+                                                       @Nonnull String clusterName,
+                                                       @Nonnull String persistenceStore, @Nonnull String charset,
                                                        @Nonnull String logIndex) {
         OutputStream out = null;
         Properties props = new Properties();
         props.setProperty("masterName", masterName);
+        props.setProperty("clusterName",clusterName);
         props.setProperty("persistenceStore", persistenceStore);
         props.setProperty("elasticCharset", charset);
         props.setProperty("jenkins_logs",logIndex);
@@ -159,7 +158,7 @@ public class ElasticJenkinsUtil {
     }
 
     public static String getIdByMaster(@Nonnull String master) {
-        String uri = getProperty("persistenceStore")+"/"+indexJenkinsMaster+"/clusters/_search";
+        String uri = getProperty("persistenceStore")+"/"+indexJenkinsCluster+"/clusters/_search";
         String json = "{ \"query\" : {\n" +
                 "  \"match\" : {\n" +
                 "    \"jenkinsMasterName\" : \""+master+"\" \n" +
@@ -187,11 +186,15 @@ public class ElasticJenkinsUtil {
         LOGGER.log(Level.FINEST,"Charset : "+charset);
         StringEntity entity = new StringEntity(json,charset);
         httpPost.setEntity(entity);
+        LOGGER.log(Level.FINEST,"Uri:"+uri);
+        LOGGER.log(Level.FINEST,"JSON:"+json);
         HttpClientBuilder builder = HttpClientBuilder.create();
         CloseableHttpClient client = builder.build();
         try {
             CloseableHttpResponse response = client.execute(httpPost);
             result = EntityUtils.toString(response.getEntity());
+            LOGGER.log(Level.FINEST,"Response:"+response.getStatusLine().getStatusCode()+",Message:"+response.getStatusLine().getReasonPhrase());
+
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE,"An unexpected response was received:",e);
         }finally {

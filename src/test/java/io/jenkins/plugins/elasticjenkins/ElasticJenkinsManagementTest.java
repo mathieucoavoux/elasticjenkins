@@ -25,14 +25,15 @@ public class ElasticJenkinsManagementTest {
     public static String master = "MASTERNAME";
     public static String clusterName = "CLUSTERNAME";
     public static String hostname = "MYHOST";
-    public static String jenkinsManageIndex = "jenkins_manage";
+    public static String jenkinsManageIndexCluster = "jenkins_manage_clusters";
+    public static String jenkinsManageIndexMapping = "jenkins_manage_mapping";
     public static String jenkinsManageType = "clusters";
 
     @Rule
     public JenkinsRule j = new JenkinsRule();
 
     public void deleteCluster(String id) throws IOException {
-        String uri = url+"/"+jenkinsManageIndex+"/"+jenkinsManageType+"/"+id;
+        String uri = url+"/"+jenkinsManageIndexCluster+"/"+jenkinsManageType+"/"+id;
         HttpDelete httpDelete = new HttpDelete(uri);
         httpDelete.setHeader("Accept","application/json");
         HttpClientBuilder builder = HttpClientBuilder.create();

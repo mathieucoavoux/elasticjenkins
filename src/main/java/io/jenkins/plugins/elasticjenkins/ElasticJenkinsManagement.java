@@ -7,9 +7,7 @@ import hudson.model.ManagementLink;
 import io.jenkins.plugins.elasticjenkins.entity.ElasticMaster;
 import io.jenkins.plugins.elasticjenkins.entity.ElasticsearchResult;
 import io.jenkins.plugins.elasticjenkins.util.ElasticJenkinsUtil;
-import jenkins.model.Jenkins;
 
-import org.apache.http.entity.StringEntity;
 import org.kohsuke.stapler.HttpResponse;
 import org.kohsuke.stapler.HttpResponses;
 import org.kohsuke.stapler.QueryParameter;
@@ -18,10 +16,6 @@ import org.kohsuke.stapler.QueryParameter;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.UnsupportedEncodingException;
-import java.lang.management.ManagementFactory;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -32,7 +26,7 @@ public class ElasticJenkinsManagement extends ManagementLink {
 
     protected String title = "Elasticjenkins management";
 
-    private static String indexJenkinsMaster = "jenkins_manage";
+    private static String indexJenkinsCluster = "jenkins_manage_clusters";
 
     @CheckForNull
     @Override
@@ -78,8 +72,8 @@ public class ElasticJenkinsManagement extends ManagementLink {
      * @return: charset
      */
     public String getJenkinsCharset() {
-        String charset = ElasticJenkinsUtil.getProperty("charset");
-        return charset == null ? "UTF-16" : charset;
+        String charset = ElasticJenkinsUtil.getProperty("elasticCharset");
+        return charset == null ? "UTF-8" : charset;
     }
 
     /**
@@ -89,6 +83,10 @@ public class ElasticJenkinsManagement extends ManagementLink {
     public String getLogIndex() {
         String charset = ElasticJenkinsUtil.getProperty("logIndex");
         return charset == null ? "jenkins_logs" : charset;
+    }
+
+    public String getClusterName() {
+        return ElasticJenkinsUtil.getProperty("clusterName");
     }
 
     /**
@@ -119,9 +117,9 @@ public class ElasticJenkinsManagement extends ManagementLink {
             LOGGER.log(Level.WARNING,"Elasticsearch cluster status is:"+status);
             return HttpResponses.redirectTo(".?badStatus");
         }
-
+        LOGGER.log(Level.FINEST,"masterName:{0},persistenceStore:{1},charset:{2},clusterName:{3},jenkinsLogs:{4}", new Object[]{masterName,persistenceStore,charset,clusterName,jenkinsLogs});
         //Save the properties
-        if(!ElasticJenkinsUtil.writeProperties(masterName,persistenceStore,charset,jenkinsLogs))
+        if(!ElasticJenkinsUtil.writeProperties(masterName,clusterName , persistenceStore,charset,jenkinsLogs ))
             return HttpResponses.redirectTo(".?error");
 
         //Check if the master exist already
@@ -141,7 +139,7 @@ public class ElasticJenkinsManagement extends ManagementLink {
                                            @Nonnull String hostname, @Nullable String masterId) {
         //We let Elasticsearch manage the ID
         String url = ElasticJenkinsUtil.getProperty("persistenceStore");
-        String uri = url+"/"+indexJenkinsMaster+"/clusters/";
+        String uri = url+"/"+indexJenkinsCluster+"/clusters/";
         if(masterId != null)
             uri.concat(masterId);
 

@@ -51,6 +51,8 @@
     <f:form method="post" name="config" action="configure" >
         	<j:set var="masterName" value="${it.getJenkinsMaster()}" />
 
+        	<j:set var="clusterName" value="${it.getClusterName()}" />
+
             <j:set var="persistenceStore" value="${it.getPersistenceStore()}" />
 
             <j:set var="charset" value="${it.getJenkinsCharset()}" />
@@ -60,6 +62,10 @@
         	<f:entry title="Jenkins master name:" class="form-check-label">
     			<f:textbox name="masterName" class="form-input" default="${masterName}"/>
  	 		</f:entry>
+
+ 	 		<f:entry title="Jenkins cluster name:" class="form-check-label">
+                <f:textbox name="clusterName" class="form-input" default="${clusterName}"/>
+            </f:entry>
 
             <f:entry title="Persistence store:" class="form-check-label">
                 <f:textbox name="persistenceStore" class="form-input" default="${persistenceStore}"/>
@@ -71,7 +77,7 @@
 
 
             <f:entry title="Index name of the log:" class="form-check-label">
-                <f:textbox name="logIndex" class="form-input" default="${logIndex}"/>
+                <f:textbox name="jenkinsLogs" class="form-input" default="${logIndex}"/>
             </f:entry>
 
 
