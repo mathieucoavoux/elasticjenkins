@@ -35,10 +35,54 @@ The status of the build is recorded in Elasticsearch at every stage.
 Builds are stored into Elasticsearch with their *master name*. The *master name* is defined under the management console.
 This name must be unique as this is use to identify which server has executed what.
 
+####Design explanations
+As per explained before the main objective to store logs in one place is to keep track of what has been built on the platform.
+Moreover we would like to have active-active Jenkins and if one failed another can take the not-started build over or 
+relaunch a build at the stage where it failed.
+
+We explain here how and why we designed the model in the persistence store.
+
+The decisions taken below can changed in the future based on the issues we may encounter.
+
+#####Why Elasticsearch?
+Elasticsearch is designed to store document, it can be a simple key-value document or a large text file. 
+Hence we can store both the build result and the log output in the same store.
+
+As elasticsearch is a NO-SQL database it allows us to dynamically allocate shards if the number of builds growth significantly.
+
+Finally the last main reason that we chose Elasticsearch, is that we can use Kibana application to create reports of our builds, or even search for a build.
+This can be used by a customer which doesn't have an access to the Jenkins server or because the server is no longer available as it was a temporary container.
+
+#####Why using the hash of the project as an index?
+Jenkins allows to have any characters as the project name as we want to ensure that the index has only alpha-numerical characters we used the MD5 hash.
+
+#####Why do we create an index per project and not storing every build into a single one.
+We want to display the latest build first in the history. If we stored every build into a single index we would need to 
+take all builds for a specific project and then sort the result. 
+As per mentioned into the Elasticsearch documentation the sort operation may consume a lot of memory as we need to 
+take all results before sorting them. 
+
+This can be even more painful we want to paginate the history results to the user. Each time we need to take all results and then split them in pages.
+
+By dedicating an index for a project we can sort the result based on the id and consequently no need to get all the results.
+
+#####Why do we store logs output into another index?
+As we are using the index to create report a search for a build based on parameters or status we want to keep those documents as light as possible.
+We assume that we will access more of the build status rather than its log output.
+
+#####Why do we create a date index for the log?
+We assume that a log output of a build perform during the current month will be accessed more than a build performed long time ago. 
+We can decrease the priority and the redundancy of an old log and even remove index for very old logs easily.
+
+#####Why not storing multiple types in an index?
+This was our initial designed to keep track of the builds and enqueued operation in the same index 
+but in different types. Unfortunately, Elasticsearch is not allowing us to do such design in new versions,
+for good reasons.
+
 ## Elasticsearch
 
 We use the REST api to store, retrieve or delete builds. We wanted to use the REST API rather than the SDK for several reasons:
-* The REST API basic operations doen't differ between Elasticsearch version
+* The REST API basic operations doesn't differ between Elasticsearch version
 * There is no need to add the Elasticsearch transport which has been changed between some major versions
 * We don't overload the classloader with all Elasticsearch dependencies that can be in conflict with others plugins
 
