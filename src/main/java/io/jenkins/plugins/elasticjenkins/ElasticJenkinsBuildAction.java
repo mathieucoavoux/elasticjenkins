@@ -7,7 +7,7 @@ import hudson.slaves.ComputerLauncher;
 import jenkins.model.RunAction2;
 
 import javax.annotation.CheckForNull;
-/*
+
 public class ElasticJenkinsBuildAction extends ComputerLauncher implements RunAction2 {
 
     protected transient AbstractBuild<?,?> build;
@@ -25,19 +25,19 @@ public class ElasticJenkinsBuildAction extends ComputerLauncher implements RunAc
     //@CheckForNull
     @Override
     public String getIconFileName() {
-        return "document.png";
+        return "";
     }
 
     //@CheckForNull
     @Override
     public String getDisplayName() {
-        return "ElasticJenkinsBuildAction";
+        return "";
     }
 
     //@CheckForNull
     @Override
     public String getUrlName() {
-        return "elasticjenkins";
+        return "ej2";
     }
 
     public String getName() {
@@ -55,4 +55,3 @@ public class ElasticJenkinsBuildAction extends ComputerLauncher implements RunAc
         }
     }
 }
-*/

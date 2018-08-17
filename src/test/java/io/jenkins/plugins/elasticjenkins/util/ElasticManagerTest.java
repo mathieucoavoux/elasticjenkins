@@ -106,7 +106,7 @@ public class ElasticManagerTest  {
     @Before
     public void setUp() throws IOException, InterruptedException {
         //ElasticJenkinsUtil.writeProperties(master,url,"UTF-16",logIndex);
-        ElasticJenkinsUtil.writeProperties(master,clusterName , url,"UTF-16",logIndex );
+        ElasticJenkinsUtil.writeProperties(master,clusterName , url,"UTF-8",logIndex );
     }
 
     /**
@@ -119,21 +119,23 @@ public class ElasticManagerTest  {
     @Test
     public void allTests() throws IOException, InterruptedException {
         //Create index
-        createIndex();
+        //createIndex();
         //Add build
-        addBuild();
+        //addBuild();
 
         //Update build
-        updateBuild();
+        //updateBuild();
 
         //Search by id
-        searchById();
+        //searchById();
 
         //Get pagination
-        testGetPaginateBuildHistory();
+        //testGetPaginateBuildHistory();
 
         //Test add project mapping
-        testAddProjectMapping();
+        //testAddProjectMapping();
+
+        testFindByParameter();
     }
 
     public void createIndex() {
@@ -232,7 +234,7 @@ public class ElasticManagerTest  {
         }
         //Let elasticsearch save the entries correctly
         Thread.sleep(2000);
-        List<GenericBuild> list = em.getPaginateBuildHistory(index,type, , 2, "5");
+        List<GenericBuild> list = em.getPaginateBuildHistory(index,type,master , 2, "5");
         assertEquals("4",list.get(0).getId());
         assertEquals("3",list.get(1).getId());
         for(int i=1;i<10;i++) {
@@ -246,5 +248,10 @@ public class ElasticManagerTest  {
         String type = "builds";
         em.addProjectMapping(ElasticJenkinsUtil.getHash(index),URLEncoder.encode(index,"UTF-16"));
 
+    }
+
+    public void testFindByParameter() {
+        ElasticManager em = new ElasticManager();
+        List<GenericBuild> list = em.findByParameter("44b1edab813647ffecac78d81c4b8d22","builds","MyMaster2","Bonjour2");
     }
 }

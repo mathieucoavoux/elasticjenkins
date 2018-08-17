@@ -237,7 +237,12 @@ public class ElasticManager {
         return gson.fromJson(ElasticJenkinsUtil.elasticGet(uri),GenericBuild.class);
     }
 
-    protected List<String> getLogOutput(@Nonnull String suffix) {
+    public String getLogOutputId(@Nonnull String index, @Nonnull String type, @Nonnull String id) {
+        String uri = url+"/"+index+"/"+type+"/"+id+"/_source";
+        return gson.fromJson(JsonPath.parse(ElasticJenkinsUtil.elasticGet(uri)).read("$.logId").toString(),String.class);
+    }
+
+    public List<String> getLogOutput(@Nonnull String suffix) {
         String indexLogs = ElasticJenkinsUtil.getProperty("jenkins_logs");
         String uri = url+"/"+indexLogs+"/"+suffix+"/_source";
         return gson.fromJson(JsonPath.parse(ElasticJenkinsUtil.elasticGet(uri)).read("$.logs").toString(),List.class);
@@ -345,6 +350,39 @@ public class ElasticManager {
             LOGGER.log(Level.FINEST,"Mapping uri: {0}, json : {1}",new Object[]{uri,jsonUpdate});
             ElasticJenkinsUtil.elasticPost(uri.concat("/"),jsonUpdate);
         }
+    }
+
+
+    public List<GenericBuild> findByParameter(@Nonnull String index, @Nonnull String type,
+                                               @Nonnull String masters,@Nonnull String parameter ){
+        List<GenericBuild> listBuilds = new ArrayList<>();
+        String uri = url+"/"+index+"/"+type+"/_search";
+
+        String json = "{\n" +
+                "  \"query\": {\n" +
+                "    \"bool\": {\n" +
+                "      \"must\": [\n" +
+                "        { \"match\": { \"jenkinsMasterName\": \""+masters+"\" }},\n" +
+                "        { \"match\": { \"parameters.value\": \""+parameter+"\" }}\n" +
+                "      ]\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+
+
+        String jsonResponse = ElasticJenkinsUtil.elasticPost(uri,json);
+
+        LOGGER.log(Level.FINEST,"jsonResponse:"+jsonResponse);
+        Integer max = JsonPath.parse(jsonResponse).read("$.hits.hits.length()");
+
+        for(int i=0;i<max;i++) {
+            LOGGER.log(Level.FINEST,"Index: {0}, content: {1}", new Object[]{i,JsonPath.parse(jsonResponse).read("$.hits.hits["+i+"]._source").toString()});
+            GenericBuild genericBuild =  gson.fromJson(JsonPath.parse(jsonResponse).read(
+                    "$.hits.hits["+i+"]._source").toString(),GenericBuild.class);
+            listBuilds.add(genericBuild);
+        }
+
+        return listBuilds;
     }
 
     public void createManageIndex() {

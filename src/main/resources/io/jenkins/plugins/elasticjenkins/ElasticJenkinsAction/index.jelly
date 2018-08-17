@@ -6,13 +6,18 @@
 
     <l:layout  norefresh="true">
         <link type="text/css" href="${rootURL}/plugin/elasticjenkins/css/bootstrap.min.css" rel="stylesheet"/>
+        <link type="text/css" rel="stylesheet" href="${rootURL}/plugin/elasticjenkins/css/default.css"/>
+
         <st:include it="${app}" page="sidepanel"/>
         <l:main-panel>
 
-            <script src='${rootURL}/plugin/elasticjenkins/js/utils.js'></script>
+            <script src="${rootURL}/plugin/elasticjenkins/js/utils.js"></script>
+                        <script src="${rootURL}/plugin/elasticjenkins/js/highlight.pack.js"></script>
+                                <script>hljs.initHighlightingOnLoad();</script>
             <script type="text/javascript">
                     var number = 0;
                     var last_fetch = new Date().getTime();
+                     var eja = <st:bind value="${it}" />;
                     function getPaginatedHistory(type,reset) {
                         var view_type = document.getElementById("select_view_type").value;
                         var divNumberPage = document.getElementById("number_pages");
@@ -21,7 +26,8 @@
                             }else{
                                 number = number + 20;
                             }
-                            var eja = <st:bind value="${it}" />;
+
+
                             eja.getPagninatedHistoryJson(type,view_type,'20',number,function(t) {
                                    array = t.responseObject();
                                     addContent(array,'after');
@@ -45,10 +51,26 @@
                         old_tbody.parentNode.replaceChild(new_tbody, old_tbody);
                         getPaginatedHistory('builds',true);
                     }
+
+                    function searchResult() {
+                        var view_type = document.getElementById("select_view_type").value;
+                        var filter_value = document.getElementById("input_filter").value;
+                        var filter_type = document.getElementById("select_filter_type").value;
+                        var new_tbody = document.createElement("tbody");
+                        new_tbody.setAttribute("name","result_tbody");
+                        new_tbody.setAttribute("id","result_tbody");
+                        var old_tbody = document.getElementById("result_tbody");
+                        old_tbody.parentNode.replaceChild(new_tbody, old_tbody);
+                        eja.filterResult('builds',view_type,filter_type,filter_value,function(t) {
+                               array = t.responseObject();
+                                addContent(array,'after');
+                        });
+                    }
             </script>
         <h1>${it.displayName}</h1>
 
         <div class="container-fluid">
+            <form action="#">
             <div class="row">
                 <label>History of:</label>
                 <div class="col">
@@ -60,18 +82,17 @@
                 </div>
                 <label>Filter:</label>
                 <div class="col">
-                    <select class="form-control">
-                        <option value="server">Server name</option>
+                    <select id="select_filter_type" name="select_filter_type" class="form-control">
                         <option value="parameters">Parameters</option>
                     </select>
                 </div>
                 <div class="col">
-                    <input type="text" class="form-control" placeholder="Search..." />
+                    <input type="text" id="input_filter" name="input_filter" class="form-control" placeholder="Search..." />
 
                 </div>
-                <button type="submit" class="btn btn-primary mb-2">Submit</button>
+                <button type="submit" class="btn btn-primary mb-2" onclick="searchResult()">Submit</button>
             </div>
-
+            </form>
             <div class="row">
                 <table class="table" id="table_result" name="table_result">
                 <thead>
@@ -81,7 +102,9 @@
                         <th>Project</th>
                         <th>Status</th>
                         <th>Parameters</th>
+                        <th>Master</th>
                         <th>Executed on</th>
+                        <th>Log</th>
                     </tr>
                 </thead>
                 <tbody id="result_tbody">
@@ -107,7 +130,9 @@
                                     <pre>${palist.getName()} : ${palist.getValue()}</pre>
                                 </j:forEach>
                             </td>
+                            <td>${item.getJenkinsMasterName()}</td>
                             <td>${item.getExecutedOn()}</td>
+                            <td><a href="getLog?id=${bid}_${master}"><img src="${rootURL}/plugin/elasticjenkins/36x36/log_icon.png" ></img></a></td>
                         </tr>
                     </j:forEach>
                 </tbody>
@@ -118,6 +143,18 @@
                 <div class="col-md-4"> <button onclick="getPaginatedHistory('builds',false)" type="button" class="btn btn-lg btn-outline-info">Get more builds</button></div>
                 <div class="col-md-4"></div>
             </div>
+        </div>
+
+        <div>
+            <j:out value="${h.generateConsoleAnnotationScriptAndStylesheet()}"/>
+            <j:choose>
+            <pre class="console-output">
+                        			<st:getOutput var="output" />
+                        			<code>
+                        			<j:whitespace>${it.writeOutput(output)}</j:whitespace>
+                        			</code>
+                      			</pre>
+                      			</j:choose>
         </div>
         </l:main-panel>
     </l:layout>

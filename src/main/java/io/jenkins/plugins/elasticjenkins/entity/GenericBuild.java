@@ -2,8 +2,18 @@ package io.jenkins.plugins.elasticjenkins.entity;
 
 
 
+import hudson.console.AnnotatedLargeText;
+import hudson.console.ConsoleAnnotator;
+import hudson.model.AbstractProject;
+import io.jenkins.plugins.elasticjenkins.util.ElasticLogHandler;
+import org.apache.commons.jelly.XMLOutput;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.charset.Charset;
 import java.util.List;
 
 public class GenericBuild {
@@ -161,6 +171,5 @@ public class GenericBuild {
     public void setExecutedOn(String executedOn) {
         this.executedOn = executedOn;
     }
-
 
 }

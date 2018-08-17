@@ -29,6 +29,10 @@ function addContent(json,location) {
         var tdParameters = document.createElement("td");
         tdParameters.innerHTML = myParameters;
 
+        var tdMaster = document.createElement("td");
+        var master = document.createTextNode(array[i].jenkinsMasterName);
+        tdMaster.appendChild(master);
+
         var tdExecutedOn = document.createElement("td");
         var executedOn = document.createTextNode(array[i].executedOn);
         tdExecutedOn.appendChild(executedOn);
@@ -38,6 +42,7 @@ function addContent(json,location) {
         tr.appendChild(tdName);
         tr.appendChild(tdStatus);
         tr.appendChild(tdParameters);
+        tr.appendChild(tdMaster);
         tr.appendChild(tdExecutedOn);
         if(location == "after") {
             table.appendChild(tr);

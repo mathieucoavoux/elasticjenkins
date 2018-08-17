@@ -39,7 +39,7 @@ public class ElasticJenkinsUtilTest {
 
     @Before
     public void setUp() throws IOException, InterruptedException {
-        ElasticJenkinsUtil.writeProperties(master,clusterName , url,"UTF-16",indexLog );
+        ElasticJenkinsUtil.writeProperties(master,clusterName , url,"UTF-8",indexLog );
 
     }
 

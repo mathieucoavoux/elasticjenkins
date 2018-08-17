@@ -82,6 +82,13 @@
             </exclusions>
         </dependency>
         -->
+
+        <!-- https://mvnrepository.com/artifact/org.jenkins-ci.main/remoting -->
+        <dependency>
+            <groupId>org.jenkins-ci.main</groupId>
+            <artifactId>remoting</artifactId>
+            <version>3.13</version>
+        </dependency>
         <!-- https://mvnrepository.com/artifact/com.jayway.jsonpath/json-path -->
         <dependency>
             <groupId>com.jayway.jsonpath</groupId>
