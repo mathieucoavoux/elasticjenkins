@@ -35,7 +35,9 @@ public class ElasticManager {
 
     protected String url = ElasticJenkinsUtil.getProperty("persistenceStore");
     protected String master = ElasticJenkinsUtil.getProperty("masterName");
+    protected String clusterName = ElasticJenkinsUtil.getProperty("clusterName");
     protected String charset = ElasticJenkinsUtil.getProperty("elasticCharset");
+
 
     protected Gson gson = new GsonBuilder().create();
 
@@ -83,12 +85,17 @@ public class ElasticManager {
         String json = gson.toJson(genericBuild);
 
         //Post the json to Elasticsearch
-        String eId = build.getId()+"_"+master;
+        String eId = build.getId()+"_b_"+master;
         String uri = url+"/"+index+"/"+type+"/"+eId;
         String elasticSearchId = null;
         ElasticsearchResult esr = gson.fromJson(ElasticJenkinsUtil.elasticPost(uri,json),ElasticsearchResult.class);
         if (esr.getResult().equals("created") || esr.getResult().equals("updated")) elasticSearchId = esr.get_id();
 
+        //If we can save the build we can remove the dequeued item
+        String queueUri = url+"/"+index+"/"+type+"/"+build.getQueueId()+"_q_"+master;
+        if(elasticSearchId != null)
+            if(! ElasticJenkinsUtil.elasticDelete(queueUri))
+                LOGGER.log(Level.SEVERE,"Cannot delete queued item:"+queueUri);
         return elasticSearchId;
     }
 
@@ -107,7 +114,6 @@ public class ElasticManager {
             for(String oneLine : logs) {
                 //update.add(URLEncoder.encode(oneLine,charset));
                 update.add(oneLine);
-                LOGGER.log(Level.INFO,"Line:"+oneLine);
             }
             //genericBuild.setLogId(update);
 
@@ -399,4 +405,93 @@ public class ElasticManager {
         ElasticJenkinsUtil.elasticPut(uri,json);
         ElasticJenkinsUtil.elasticPut(uri2,json);
     }
+
+    public String addQueueItem(Queue.WaitingItem waitingItem) {
+
+        String index = ElasticJenkinsUtil.getHash(waitingItem.task.getUrl().split(Long.toString(waitingItem.getId()))[0]);
+        GenericBuild genericBuild = new GenericBuild();
+        genericBuild.setName(ElasticJenkinsUtil.convertUrlToFullName(waitingItem.task.getUrl()));
+        genericBuild.setId(Long.toString(waitingItem.getId()));
+
+        List<ParametersAction> parametersActions = waitingItem.getActions(ParametersAction.class);
+        List<Parameters> listParameters = new ArrayList<>();
+        for(ParametersAction parametersAction : parametersActions) {
+            List<ParameterValue> parameterValues = parametersAction.getAllParameters();
+            for(ParameterValue parameterValue : parameterValues) {
+                Parameters parameters = new Parameters();
+                parameters.setName(parameterValue.getName());
+                parameters.setValue(parameterValue.getValue());
+                parameters.setDescription(parameterValue.getDescription());
+                listParameters.add(parameters);
+            }
+
+        }
+        genericBuild.setParameters(listParameters);
+        genericBuild.setQueuedSince(waitingItem.getInQueueSince());
+        //genericBuild.setLaunchedByName(User.current().getDisplayName());
+        //genericBuild.setLaunchedById(User.current().getId());
+        genericBuild.setJenkinsMasterName(master);
+        try {
+            genericBuild.setExecutedOn(Executor.currentExecutor().getOwner().getHostName());
+        } catch (IOException e) {
+            LOGGER.log(Level.INFO,"We can not retrieve the hostname of the slave");
+        } catch (InterruptedException e) {
+            LOGGER.log(Level.INFO,"We can not retrieve the hostname of the slave");
+        } catch (NullPointerException e) {
+            LOGGER.log(Level.INFO,"Executor is empty. We must be in a testing mode");
+        }
+        genericBuild.setStatus("ENQUEUED");
+        //Convert the generic build to a Json string
+        String json = gson.toJson(genericBuild);
+
+        //Post the json to Elasticsearch
+        String eId = waitingItem.getId()+"_q_"+master;
+        String uri = url+"/"+index+"/builds/"+eId;
+        String elasticSearchId = null;
+        ElasticsearchResult esr = gson.fromJson(ElasticJenkinsUtil.elasticPost(uri,json),ElasticsearchResult.class);
+        if (esr.getResult().equals("created") || esr.getResult().equals("updated")) elasticSearchId = esr.get_id();
+
+        return elasticSearchId;
+    }
+
+    public void updateQueueItem(Queue.LeftItem leftItem,String eId) {
+        String index = ElasticJenkinsUtil.getHash(leftItem.task.getUrl().split(Long.toString(leftItem.getId()))[0]);
+        String uri = url+"/"+index+"/builds/"+eId+"/_update";
+
+        String json = null;
+        json = "{\n" +
+                "  \"doc\": {\n" +
+                "    \"status\" : \"DEQUEUED\"" +
+                "  }\n" +
+                "}";
+
+
+        ElasticsearchResult esr = gson.fromJson(ElasticJenkinsUtil.elasticPost(uri,json),ElasticsearchResult.class);
+
+
+    }
+
+    protected String getCurentMasterId() {
+        String uri = url+"/"+jenkinsManageIndexCluster+"/"+jenkinsManageClusters+"/_search";
+        //First we check if the hash has been already saved
+        String jsonReq = "{ \"query\" : { \n" +
+                " \"bool\" : {\n" +
+                " \"should\" : [\n" +
+                "     { \"match\" : { \"jenkinsMasterName\" : \""+master+"\" }},\n" +
+                "     { \"match\" : { \"clusterName\": \""+clusterName+"\"}}\n" +
+                "     ]\n" +
+                "}\n" +
+                "}\n" +
+                "}";
+
+        String jsonResponse = ElasticJenkinsUtil.elasticPost(uri,jsonReq);
+        Integer max = JsonPath.parse(jsonResponse).read("$.hits.hits.length()");
+        if(max != 1) {
+            LOGGER.log(Level.SEVERE, "The number of master {0}found ");
+            return null;
+        }
+        return  gson.fromJson(JsonPath.parse(jsonResponse).read(
+                "$.hits.hits[0]._id").toString(),String.class);
+    }
+
 }

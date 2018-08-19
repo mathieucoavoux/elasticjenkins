@@ -8,6 +8,7 @@ import io.jenkins.plugins.elasticjenkins.entity.ElasticMaster;
 import io.jenkins.plugins.elasticjenkins.entity.ElasticsearchResult;
 import io.jenkins.plugins.elasticjenkins.util.ElasticJenkinsUtil;
 
+import io.jenkins.plugins.elasticjenkins.util.ElasticManager;
 import org.kohsuke.stapler.HttpResponse;
 import org.kohsuke.stapler.HttpResponses;
 import org.kohsuke.stapler.QueryParameter;
@@ -117,8 +118,13 @@ public class ElasticJenkinsManagement extends ManagementLink {
             LOGGER.log(Level.WARNING,"Elasticsearch cluster status is:"+status);
             return HttpResponses.redirectTo(".?badStatus");
         }
+        //Create indexes if they are not existing yet
+        ElasticManager elasticManager = new ElasticManager();
+        elasticManager.createManageIndex();
         LOGGER.log(Level.FINEST,"masterName:{0},persistenceStore:{1},charset:{2},clusterName:{3},jenkinsLogs:{4}", new Object[]{masterName,persistenceStore,charset,clusterName,jenkinsLogs});
         //Save the properties
+        ElasticJenkinsUtil elasticJenkinsUtil = new ElasticJenkinsUtil();
+        elasticJenkinsUtil.setCharset(charset);
         if(!ElasticJenkinsUtil.writeProperties(masterName,clusterName , persistenceStore,charset,jenkinsLogs ))
             return HttpResponses.redirectTo(".?error");
 

@@ -132,7 +132,7 @@
                             </td>
                             <td>${item.getJenkinsMasterName()}</td>
                             <td>${item.getExecutedOn()}</td>
-                            <td><a href="getLog?id=${bid}_${master}"><img src="${rootURL}/plugin/elasticjenkins/36x36/log_icon.png" ></img></a></td>
+                            <td><a href="getLog?id=${bid}_b_${master}"><img src="${rootURL}/plugin/elasticjenkins/36x36/log_icon.png" ></img></a></td>
                         </tr>
                     </j:forEach>
                 </tbody>

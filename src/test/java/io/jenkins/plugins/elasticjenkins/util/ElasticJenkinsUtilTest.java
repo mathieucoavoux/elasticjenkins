@@ -29,7 +29,7 @@ public class ElasticJenkinsUtilTest {
     public JenkinsRule j = new JenkinsRule();
 
     public void deleleTest(String id) throws IOException {
-        String uri = url+"/jenkins_manage/clusters/"+id;
+        String uri = url+"/"+indexJenkinsIndexCluster+"/clusters/"+id;
         HttpDelete httpDelete = new HttpDelete(uri);
         httpDelete.setHeader("Accept","application/json");
         HttpClientBuilder builder = HttpClientBuilder.create();

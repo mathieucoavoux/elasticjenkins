@@ -1,10 +1,7 @@
 package io.jenkins.plugins.elasticjenkins.util;
 
 import hudson.model.*;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.mockito.Mockito;
 
@@ -82,11 +79,12 @@ public class ElasticLogHandlerTest {
         ElasticJenkinsUtil.writeProperties(master,clusterName , url,"UTF-8",indexLog );
     }
 
+    @Ignore
     @Test
     public void testGetLog() throws IOException {
         Run<?,?> build = generateBuild("76");
-        ElasticLogHandler elasticLogHandler = new ElasticLogHandler(build);
-        File result = elasticLogHandler.generateLogFile("MyMaster2","76",URLDecoder.decode("2018_08%2F2Dj4OGUB66rIEJg-Zbgg","UTF-8"));
-        System.out.println("Result:"+result);
+        //ElasticLogHandler elasticLogHandler = new ElasticLogHandler(build);
+        //File result = elasticLogHandler.generateLogFile("MyMaster2","76",URLDecoder.decode("2018_08%2F2Dj4OGUB66rIEJg-Zbgg","UTF-8"));
+        //System.out.println("Result:"+result);
     }
 }

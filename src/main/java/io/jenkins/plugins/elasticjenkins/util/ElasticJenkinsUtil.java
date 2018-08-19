@@ -70,6 +70,14 @@ public class ElasticJenkinsUtil {
         return hash;
     }
 
+    public static String getCharset() {
+        return getProperty("elasticCharset");
+    }
+
+    public void setCharset(String charset) {
+        this.charset = charset;
+    }
+
     /**
      * Get a property from the elasticjenkins file properties
      * @param property: property to retrieve
@@ -264,6 +272,28 @@ public class ElasticJenkinsUtil {
             }
         }
 
+
+        return result;
+    }
+
+    public static boolean elasticDelete(String uri) {
+        boolean result = false;
+        HttpDelete httpDelete = new HttpDelete(uri);
+        httpDelete.setHeader("Accept","application/json");
+        HttpClientBuilder builder = HttpClientBuilder.create();
+        CloseableHttpClient client = builder.build();
+        try {
+            CloseableHttpResponse response = client.execute(httpDelete);
+            result = response.getStatusLine().getStatusCode() == 200 ? true : false;
+        } catch (IOException e) {
+            LOGGER.log(Level.SEVERE,"An unexpected response was received:",e);
+        }finally {
+            try {
+                client.close();
+            } catch (IOException e) {
+                LOGGER.log(Level.WARNING,"Cannot close the connection");
+            }
+        }
 
         return result;
     }

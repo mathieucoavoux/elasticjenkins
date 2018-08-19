@@ -42,6 +42,19 @@ public class GenericBuild {
     @Nullable
     protected Long endDate;
 
+    @Nullable
+    public Long getQueuedSince() {
+        return queuedSince;
+    }
+
+    public void setQueuedSince(@Nullable Long queuedSince) {
+        this.queuedSince = queuedSince;
+    }
+
+    @Nullable
+    protected Long queuedSince;
+
+
     /**
      * Parameters set for the built
      */

@@ -121,19 +121,19 @@ public class ElasticManagerTest  {
         //Create index
         //createIndex();
         //Add build
-        //addBuild();
+        addBuild();
 
         //Update build
-        //updateBuild();
+        updateBuild();
 
         //Search by id
-        //searchById();
+        searchById();
 
         //Get pagination
-        //testGetPaginateBuildHistory();
+        testGetPaginateBuildHistory();
 
         //Test add project mapping
-        //testAddProjectMapping();
+        testAddProjectMapping();
 
         testFindByParameter();
     }
@@ -151,8 +151,8 @@ public class ElasticManagerTest  {
         String index = "jenkins_test";
         String type = "builds";
         String idElastic = em.addBuild(index,type,build);
-        assertTrue(idElastic.equals("1_"+master));
-        deleleTest(index,type,"1_"+master);
+        assertTrue(idElastic.equals("1_b_"+master));
+        deleleTest(index,type,"1_b_"+master);
     }
 
 
@@ -175,11 +175,11 @@ public class ElasticManagerTest  {
         writer.close();
         PowerMockito.when(build.getLogFile()).thenReturn(file);
         String idUpdated = em.updateBuild(index,type,build,idElastic,"COMPLETED",logs);
-        assertEquals("1_"+master,idUpdated);
+        assertEquals("1_b_"+master,idUpdated);
         String idLog = em.searchById(index,type,idUpdated).getLogId();
         assertTrue(idLog != null);
         deleteTest(logIndex,idLog);
-        deleleTest(index,type,"1_"+master);
+        deleleTest(index,type,"1_b_"+master);
         if(file.exists()) file.delete();
 
     }
@@ -192,7 +192,7 @@ public class ElasticManagerTest  {
         String type = "builds";
         String fileName = "testUpdate2.log";
         String idElastic = em.addBuild(index,type,build);
-        assertTrue(idElastic.equals("1_"+master));
+        assertTrue(idElastic.equals("1_b_"+master));
 
         List<String> logs = new ArrayList<>();
 

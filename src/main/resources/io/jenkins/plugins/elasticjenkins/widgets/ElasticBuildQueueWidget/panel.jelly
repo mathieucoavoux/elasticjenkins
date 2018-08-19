@@ -30,6 +30,14 @@ THE SOFTWARE.
    <l:pane width="3" id="executors2"
         title="Elastic builds queue"
         collapsedText="collapseText">
+       <script>
+           var ebqw = <st:bind value="${it}" />;
+           ebqw.getItemCount(function(t) {
+            data = t.responseObject();
+            alert(data);
+
+           });
+       </script>
       <colgroup><col width="30"/><col width="200*"/><col width="24"/></colgroup>
 
       

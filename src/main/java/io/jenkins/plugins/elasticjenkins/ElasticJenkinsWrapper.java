@@ -25,7 +25,6 @@ import jenkins.tasks.SimpleBuildWrapper;
 public class ElasticJenkinsWrapper extends SimpleBuildWrapper {
 
 	private static final Logger LOGGER = Logger.getLogger(ElasticJenkins.class.getName());
-	private static String charset = ElasticJenkinsUtil.getProperty("elasticCharset");
 	
 	@DataBoundConstructor
 	public ElasticJenkinsWrapper(){}
@@ -58,9 +57,9 @@ public class ElasticJenkinsWrapper extends SimpleBuildWrapper {
 			//The hash of the project name is used for the index
 			String index = ElasticJenkinsUtil.getHash(build.getUrl().split(build.getId())[0]);
 			try {
-				em.addProjectMapping(index,URLEncoder.encode(build.getUrl().split(build.getId())[0],charset));
+				em.addProjectMapping(index,URLEncoder.encode(build.getUrl().split(build.getId())[0],ElasticJenkinsUtil.getProperty("elasticCharset")));
 			} catch (UnsupportedEncodingException e) {
-				LOGGER.log(Level.SEVERE,"Charset not supported:"+charset);
+				LOGGER.log(Level.SEVERE,"Charset not supported:"+ElasticJenkinsUtil.getProperty("elasticCharset"));
 			}
 			LOGGER.log(Level.FINEST,"Job hash: "+index);
 			id = em.addBuild(index,"builds",build);
