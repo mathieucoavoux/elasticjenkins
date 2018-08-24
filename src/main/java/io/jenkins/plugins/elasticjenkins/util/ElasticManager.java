@@ -31,6 +31,10 @@ public class ElasticManager {
     private static String jenkinsManageIndexMapping = "jenkins_manage_mapping";
     private static String jenkinsManageClusters = "clusters";
     private static String jenkinsManageMapping = "mapping";
+    private static String jenkinsBuildsIndex = "jenkins_builds";
+    private static String jenkinsBuildsType = "builds";
+    private static String jenkinsQueueIndex = "jenkins_queues";
+    private static String jenkinsQueueType = "queues";
 
 
     protected String url = ElasticJenkinsUtil.getProperty("persistenceStore");
@@ -41,7 +45,7 @@ public class ElasticManager {
 
     protected Gson gson = new GsonBuilder().create();
 
-    public String addBuild(@Nonnull String index, @Nonnull String type,
+    public String addBuild(@Nonnull String projectId, @Nonnull String type,
                            @Nonnull Run<?,?> build) {
         Gson gson = new GsonBuilder().create();
 
@@ -71,6 +75,8 @@ public class ElasticManager {
         genericBuild.setLaunchedByName(User.current().getDisplayName());
         genericBuild.setLaunchedById(User.current().getId());
         genericBuild.setJenkinsMasterName(master);
+        genericBuild.setJenkinsMasterId(ElasticJenkinsUtil.getCurentMasterId());
+        genericBuild.setProjectId(projectId);
         try {
             genericBuild.setExecutedOn(Executor.currentExecutor().getOwner().getHostName());
         } catch (IOException e) {
@@ -85,14 +91,14 @@ public class ElasticManager {
         String json = gson.toJson(genericBuild);
 
         //Post the json to Elasticsearch
-        String eId = build.getId()+"_b_"+master;
-        String uri = url+"/"+index+"/"+type+"/"+eId;
+        String eId = build.getId()+"_"+projectId+"_"+ElasticJenkinsUtil.getCurentMasterId();
+        String uri = url+"/"+jenkinsBuildsIndex+"/"+jenkinsBuildsType+"/"+eId;
         String elasticSearchId = null;
         ElasticsearchResult esr = gson.fromJson(ElasticJenkinsUtil.elasticPost(uri,json),ElasticsearchResult.class);
         if (esr.getResult().equals("created") || esr.getResult().equals("updated")) elasticSearchId = esr.get_id();
 
         //If we can save the build we can remove the dequeued item
-        String queueUri = url+"/"+index+"/"+type+"/"+build.getQueueId()+"_q_"+master;
+        String queueUri = url+"/"+jenkinsQueueIndex+"/"+jenkinsQueueType+"/"+build.getQueueId()+"_"+projectId+"_"+ElasticJenkinsUtil.getCurentMasterId();
         if(elasticSearchId != null)
             if(! ElasticJenkinsUtil.elasticDelete(queueUri))
                 LOGGER.log(Level.SEVERE,"Cannot delete queued item:"+queueUri);
@@ -142,7 +148,7 @@ public class ElasticManager {
                     "  \"doc\": {\n" +
                     "    \"status\" : \""+status+"\",\n" +
                     "    \"logId\" : " + "\""+URLEncoder.encode(suffix,charset)+"\",\n" +
-                    "   \"endDate\" : \""+System.currentTimeMillis()+"\"" +
+                    "   \"endDate\" : "+System.currentTimeMillis() +
                     "  }\n" +
                     "}";
         } catch (UnsupportedEncodingException e) {
@@ -171,16 +177,20 @@ public class ElasticManager {
                                                       @Nonnull Integer paginationSize, @Nullable String paginationStart) {
 
         List<GenericBuild> listBuilds = new ArrayList<>();
-        String uri = url+"/"+index+"/"+type+"/_search";
+        String uri = url+"/"+"jenkins_builds"+"/"+type+"/_search";
 
         if(paginationStart == null)
             paginationStart = "0";
 
-        String json = "{ \"query\" : {\n" +
-                "  \"match\" : {\n" +
-                "    \"jenkinsMasterName\" : \""+masters+"\" \n" +
-                "  }\n" +
-                "},\n" +
+        String json = "{\n" +
+                "   \"query\": {\n" +
+                "       \"bool\": {\n" +
+                "           \"must\": [\n" +
+                "               { \"match\": { \"jenkinsMasterName\": \""+masters+"\" }},\n" +
+                "               { \"match\": { \"projectId\": \""+getProjectId(index)+"\" }}\n" +
+                "           ]\n" +
+                "       }\n" +
+                "   },\n" +
                 " \"size\" : "+paginationSize+",\n" +
                 " \"from\" : "+paginationStart+",\n" +
                 " \"sort\" :  { \"_id\" : { \"order\" : \"desc\" } }\n" +
@@ -209,13 +219,14 @@ public class ElasticManager {
     public List<GenericBuild> getNewResults(@Nonnull String index, @Nonnull String type,
                                             @Nonnull String lastFetch, String masters) {
         List<GenericBuild> listBuilds = new ArrayList<>();
-        String uri = url+"/"+index+"/"+type+"/_search";
+        String uri = url+"/"+"jenkins_builds"+"/"+type+"/_search";
         String json = "{\n" +
                 "   \"query\": {\n" +
                 "       \"bool\": {\n" +
                 "           \"must\": [\n" +
                 "               { \"match\": { \"jenkinsMasterName\": \""+masters+"\" }},\n" +
-                "               { \"range\": { \"startDate\": { \"gte\": "+lastFetch+" }}}\n" +
+                "               { \"range\": { \"startDate\": { \"gte\": "+lastFetch+" }}},\n" +
+                "               { \"match\": { \"projectId\": \""+getProjectId(index)+"\" }}\n" +
                 "           ]\n" +
                 "       }\n" +
                 "   }\n" +
@@ -239,12 +250,12 @@ public class ElasticManager {
 
     protected GenericBuild searchById(@Nonnull String index, @Nonnull String type,@Nonnull String id) {
 
-        String uri = url+"/"+index+"/"+type+"/"+id+"/_source";
+        String uri = url+"/"+"jenkins_builds"+"/"+type+"/"+id+"/_source";
         return gson.fromJson(ElasticJenkinsUtil.elasticGet(uri),GenericBuild.class);
     }
 
     public String getLogOutputId(@Nonnull String index, @Nonnull String type, @Nonnull String id) {
-        String uri = url+"/"+index+"/"+type+"/"+id+"/_source";
+        String uri = url+"/"+"jenkins_builds"+"/"+type+"/"+id+"/_source";
         return gson.fromJson(JsonPath.parse(ElasticJenkinsUtil.elasticGet(uri)).read("$.logId").toString(),String.class);
     }
 
@@ -332,12 +343,12 @@ public class ElasticManager {
         return result;
     }
 
-    public void addProjectMapping(@Nonnull String projectHash, @Nonnull String projectEncodedName) {
+    public String addProjectMapping(@Nonnull String projectHash, @Nonnull String projectEncodedName) {
         String uri = url+"/"+jenkinsManageIndexMapping+"/"+jenkinsManageMapping;
         //First we check if the hash has been already saved
         String jsonReq = "{ \"query\" : { \n" +
                 " \"bool\" : {\n" +
-                " \"should\" : [\n" +
+                " \"must\" : [\n" +
                 "     { \"match\" : { \"projectHash\" : \""+projectHash+"\" }},\n" +
                 "     { \"match\" : { \"projectEncodedName\": \""+projectEncodedName+"\"}}\n" +
                 "     ]\n" +
@@ -346,30 +357,35 @@ public class ElasticManager {
                 "}";
 
         String jsonResponse = ElasticJenkinsUtil.elasticPost(uri+"/_search",jsonReq);
-        LOGGER.log(Level.INFO,"Uri {0}, return response: {1}",new Object[]{uri,jsonResponse});
         Integer total = JsonPath.parse(jsonResponse).read("$.hits.total");
+        String eid;
         if(total == 0) {
             String jsonUpdate = "{\n" +
                     "\t\"projectHash\": \""+projectHash+"\",\n" +
                     "\t\"projectEncodedName\": \""+projectEncodedName+"\"\n" +
                     "}";
             LOGGER.log(Level.FINEST,"Mapping uri: {0}, json : {1}",new Object[]{uri,jsonUpdate});
-            ElasticJenkinsUtil.elasticPost(uri.concat("/"),jsonUpdate);
+            jsonResponse = ElasticJenkinsUtil.elasticPost(uri.concat("/"),jsonUpdate);
+            eid = JsonPath.parse(jsonResponse).read("$._id");
+        }else{
+            eid = JsonPath.parse(jsonResponse).read("$.hits.hits[0]._id");
         }
+        return eid;
     }
 
 
     public List<GenericBuild> findByParameter(@Nonnull String index, @Nonnull String type,
                                                @Nonnull String masters,@Nonnull String parameter ){
         List<GenericBuild> listBuilds = new ArrayList<>();
-        String uri = url+"/"+index+"/"+type+"/_search";
+        String uri = url+"/"+"jenkins_builds"+"/"+type+"/_search";
 
         String json = "{\n" +
                 "  \"query\": {\n" +
                 "    \"bool\": {\n" +
                 "      \"must\": [\n" +
                 "        { \"match\": { \"jenkinsMasterName\": \""+masters+"\" }},\n" +
-                "        { \"match\": { \"parameters.value\": \""+parameter+"\" }}\n" +
+                "        { \"match\": { \"parameters.value\": \""+parameter+"\" }},\n" +
+                "        { \"match\": { \"projectId\": \""+getProjectId(index)+"\" }}\n" +
                 "      ]\n" +
                 "    }\n" +
                 "  }\n" +
@@ -406,9 +422,7 @@ public class ElasticManager {
         ElasticJenkinsUtil.elasticPut(uri2,json);
     }
 
-    public String addQueueItem(Queue.WaitingItem waitingItem) {
-
-        String index = ElasticJenkinsUtil.getHash(waitingItem.task.getUrl().split(Long.toString(waitingItem.getId()))[0]);
+    public String addQueueItem(Queue.WaitingItem waitingItem,String projectId) {
         GenericBuild genericBuild = new GenericBuild();
         genericBuild.setName(ElasticJenkinsUtil.convertUrlToFullName(waitingItem.task.getUrl()));
         genericBuild.setId(Long.toString(waitingItem.getId()));
@@ -445,8 +459,8 @@ public class ElasticManager {
         String json = gson.toJson(genericBuild);
 
         //Post the json to Elasticsearch
-        String eId = waitingItem.getId()+"_q_"+master;
-        String uri = url+"/"+index+"/builds/"+eId;
+        String eId = waitingItem.getId()+"_"+projectId+"_"+ElasticJenkinsUtil.getCurentMasterId();;
+        String uri = url+"/"+jenkinsQueueIndex+"/"+jenkinsQueueType+"/"+eId;
         String elasticSearchId = null;
         ElasticsearchResult esr = gson.fromJson(ElasticJenkinsUtil.elasticPost(uri,json),ElasticsearchResult.class);
         if (esr.getResult().equals("created") || esr.getResult().equals("updated")) elasticSearchId = esr.get_id();
@@ -455,8 +469,8 @@ public class ElasticManager {
     }
 
     public void updateQueueItem(Queue.LeftItem leftItem,String eId) {
-        String index = ElasticJenkinsUtil.getHash(leftItem.task.getUrl().split(Long.toString(leftItem.getId()))[0]);
-        String uri = url+"/"+index+"/builds/"+eId+"/_update";
+        String index = ElasticJenkinsUtil.getHash(leftItem.task.getUrl().split("/"+Long.toString(leftItem.getId())+"/$")[0]);
+        String uri = url+"/"+jenkinsQueueIndex+"/"+jenkinsQueueType+"/"+eId+"/_update";
 
         String json = null;
         json = "{\n" +
@@ -471,14 +485,13 @@ public class ElasticManager {
 
     }
 
-    protected String getCurentMasterId() {
-        String uri = url+"/"+jenkinsManageIndexCluster+"/"+jenkinsManageClusters+"/_search";
+    public String getProjectId(String projectHash) {
+        String uri = url+"/"+jenkinsManageIndexMapping+"/"+jenkinsManageMapping+"/_search";
         //First we check if the hash has been already saved
         String jsonReq = "{ \"query\" : { \n" +
                 " \"bool\" : {\n" +
-                " \"should\" : [\n" +
-                "     { \"match\" : { \"jenkinsMasterName\" : \""+master+"\" }},\n" +
-                "     { \"match\" : { \"clusterName\": \""+clusterName+"\"}}\n" +
+                " \"must\" : [\n" +
+                "     { \"match\" : { \"projectHash\" : \""+projectHash+"\" }}\n" +
                 "     ]\n" +
                 "}\n" +
                 "}\n" +
@@ -487,11 +500,109 @@ public class ElasticManager {
         String jsonResponse = ElasticJenkinsUtil.elasticPost(uri,jsonReq);
         Integer max = JsonPath.parse(jsonResponse).read("$.hits.hits.length()");
         if(max != 1) {
-            LOGGER.log(Level.SEVERE, "The number of master {0}found ");
+            LOGGER.log(Level.SEVERE, "The number of project ({0}) found: {1}",new Object[]{projectHash,max});
             return null;
         }
+
         return  gson.fromJson(JsonPath.parse(jsonResponse).read(
                 "$.hits.hits[0]._id").toString(),String.class);
+    }
+
+
+    public List<GenericBuild> getLastCurrentBuilds() {
+        List<GenericBuild> listBuilds = new ArrayList<>();
+        String masters = getNodesByCluster(clusterName);
+        String uri = url+"/jenkins_builds/builds/_search";
+        String jsonReq = "{ \"query\" : { \n" +
+                " \"bool\" : {\n" +
+                " \"must\" : [\n" +
+                "     { \"match\" : { \"status\" : \"EXECUTING\" }},\n" +
+                "     { \"match\" : { \"jenkinsMasterName\" : \""+masters+"\" }}\n" +
+                "     ]\n" +
+                "}\n" +
+                "},\n" +
+                " \"size\" : 3,\n" +
+                " \"from\" : 0,\n" +
+                " \"sort\" :  { \"_id\" : { \"order\" : \"desc\" } }\n" +
+                "}";
+
+        String jsonResponse = ElasticJenkinsUtil.elasticPost(uri,jsonReq);
+        Integer max = JsonPath.parse(jsonResponse).read("$.hits.hits.length()");
+
+        for(int i=0;i<max;i++) {
+            GenericBuild genericBuild =  gson.fromJson(JsonPath.parse(jsonResponse).read(
+                    "$.hits.hits["+i+"]._source").toString(),GenericBuild.class);
+            listBuilds.add(genericBuild);
+        }
+
+        return listBuilds;
+    }
+
+    public List<GenericBuild> getLastCurrentItems() {
+        List<GenericBuild> listBuilds = new ArrayList<>();
+        String masters = getNodesByCluster(clusterName);
+        String uri = url+"/jenkins_queues/queues/_search";
+        String jsonReq = "{ \"query\" : { \n" +
+                " \"bool\" : {\n" +
+                " \"must\" : [\n" +
+                "     { \"match\" : { \"status\" : \"ENQUEUED\" }},\n" +
+                "     { \"match\" : { \"jenkinsMasterName\" : \""+masters+"\" }}\n" +
+                "     ]\n" +
+                "}\n" +
+                "},\n" +
+                " \"size\" : 3,\n" +
+                " \"from\" : 0,\n" +
+                " \"sort\" :  { \"_id\" : { \"order\" : \"desc\" } }\n" +
+                "}";
+
+        String jsonResponse = ElasticJenkinsUtil.elasticPost(uri,jsonReq);
+        Integer max = JsonPath.parse(jsonResponse).read("$.hits.hits.length()");
+
+        for(int i=0;i<max;i++) {
+            GenericBuild genericBuild =  gson.fromJson(JsonPath.parse(jsonResponse).read(
+                    "$.hits.hits["+i+"]._source").toString(),GenericBuild.class);
+            listBuilds.add(genericBuild);
+        }
+
+        return listBuilds;
+    }
+
+    public Integer getCountCurrentBuilds() {
+        String masters = getNodesByCluster(clusterName);
+        String uri = url+"/jenkins_builds/builds/_count";
+        //First we check if the hash has been already saved
+        String jsonReq = "{ \"query\" : { \n" +
+                " \"bool\" : {\n" +
+                " \"must\" : [\n" +
+                "     { \"match\" : { \"status\" : \"EXECUTING\" }},\n" +
+                "     { \"match\" : { \"jenkinsMasterName\" : \""+masters+"\" }}\n" +
+                "     ]\n" +
+                "}\n" +
+                "}\n" +
+                "}";
+
+        String jsonResponse = ElasticJenkinsUtil.elasticPost(uri,jsonReq);
+        return JsonPath.parse(jsonResponse).read("$.count");
+
+    }
+
+    public Integer getCountCurrentItem() {
+        String masters = getNodesByCluster(clusterName);
+        String uri = url+"/jenkins_queues/queues/_count";
+        //First we check if the hash has been already saved
+        String jsonReq = "{ \"query\" : { \n" +
+                " \"bool\" : {\n" +
+                " \"must\" : [\n" +
+                "     { \"match\" : { \"status\" : \"ENQUEUED\" }},\n" +
+                "     { \"match\" : { \"jenkinsMasterName\" : \""+masters+"\" }}\n" +
+                "     ]\n" +
+                "}\n" +
+                "}\n" +
+                "}";
+
+        String jsonResponse = ElasticJenkinsUtil.elasticPost(uri,jsonReq);
+        return JsonPath.parse(jsonResponse).read("$.count");
+
     }
 
 }

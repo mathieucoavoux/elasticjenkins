@@ -113,6 +113,8 @@
                         <j:set var="bid" value="${item.getId()}" />
                         <j:set var="bname" value="${item.getName()}" />
                         <j:set var="master" value="${item.getJenkinsMasterName()}" />
+                        <j:set var="projectId" value="${item.getProjectId()}" />
+                        <j:set var="masterId" value="${item.getJenkinsMasterId()}" />
                         <tr>
                             <th scope="row">
                                 <!-- <j:if test="${!build.getRecoverState()}"> -->
@@ -132,7 +134,7 @@
                             </td>
                             <td>${item.getJenkinsMasterName()}</td>
                             <td>${item.getExecutedOn()}</td>
-                            <td><a href="getLog?id=${bid}_b_${master}"><img src="${rootURL}/plugin/elasticjenkins/36x36/log_icon.png" ></img></a></td>
+                            <td><a href="getLog?id=${bid}_${projectId}_${masterId}"><img src="${rootURL}/plugin/elasticjenkins/36x36/log_icon.png" ></img></a></td>
                         </tr>
                     </j:forEach>
                 </tbody>

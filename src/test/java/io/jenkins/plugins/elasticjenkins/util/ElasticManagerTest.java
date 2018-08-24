@@ -1,6 +1,7 @@
 package io.jenkins.plugins.elasticjenkins.util;
 
 import hudson.model.*;
+import io.jenkins.plugins.elasticjenkins.ElasticJenkinsManagement;
 import io.jenkins.plugins.elasticjenkins.entity.GenericBuild;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
@@ -121,21 +122,23 @@ public class ElasticManagerTest  {
         //Create index
         //createIndex();
         //Add build
-        addBuild();
+        //addBuild();
 
         //Update build
         updateBuild();
 
         //Search by id
-        searchById();
+        //searchById();
 
         //Get pagination
-        testGetPaginateBuildHistory();
+        //testGetPaginateBuildHistory();
 
         //Test add project mapping
-        testAddProjectMapping();
+        //testAddProjectMapping();
 
-        testFindByParameter();
+        //testFindByParameter();
+
+        //testGetProjectId();
     }
 
     public void createIndex() {
@@ -253,5 +256,16 @@ public class ElasticManagerTest  {
     public void testFindByParameter() {
         ElasticManager em = new ElasticManager();
         List<GenericBuild> list = em.findByParameter("44b1edab813647ffecac78d81c4b8d22","builds","MyMaster2","Bonjour2");
+    }
+
+
+    public void testGetProjectId() throws IOException, InterruptedException {
+        ElasticManager elasticManager = new ElasticManager();
+        Run<?,?> build = generateBuild("1");
+        String hash = ElasticJenkinsUtil.getHash(build.getUrl().split(build.getId())[0]);
+        elasticManager.addProjectMapping(hash,URLEncoder.encode(build.getUrl().split(build.getId())[0],ElasticJenkinsUtil.getProperty("elasticCharset")));
+        Thread.sleep(2000);
+        String projectId = elasticManager.getProjectId(hash);
+        assertTrue(projectId != null);
     }
 }

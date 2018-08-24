@@ -23,43 +23,43 @@ THE SOFTWARE.
 -->
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:local="local">
-    <st:documentation>
+  <st:documentation>
     Displays the queues saved into an Elastic persistent store
 
-    </st:documentation>
-    <l:pane width="3" id="panel_queue"
-        title="Elastic queue"
+  </st:documentation>
+   <l:pane width="3" id="panel_build"
+        title="Elastic builds"
         collapsedText="collapseText">
         <link type="text/css" href="${rootURL}/plugin/elasticjenkins/css/bootstrap.min.css" rel="stylesheet"/>
         <script src="${rootURL}/plugin/elasticjenkins/js/utils.js"></script>
         <script>
-            window.setInterval(function() {
+           window.setInterval(function() {
                 var ebqw = <st:bind value="${it}" />;
-                ebqw.getLastQueuedItemsJson(function(q) {
-                   queue_json_response = q.responseObject();
-                    addContentPanel(queue_json_response,"tbody_queue_id");
+                ebqw.getLastCurrentBuildsJson(function(bj) {
+                    current_build_json = bj.responseObject();
+                    addContentPanel(current_build_json,"tbody_build_id");
                 });
-                var span_queue = document.getElementById("span_count_queue");
-                ebqw.getItemCount(function(ic) {
-                    countItem = ic.responseObject();
-                    span_queue.innerHTML = countItem;
-
+                var span_build = document.getElementById("span_count_build");
+                ebqw.getBuildCount(function(bc) {
+                    count = bc.responseObject();
+                    span_build.innerHTML = count;
                 });
             }, 5000);
+
         </script>
         <colgroup><col width="30"/><col width="200*"/><col width="24"/>
-            <h6>Item in queues : <span id="span_count_queue">${it.getItemCount()}</span></h6>
+            <h6>Current build : <span id="span_count_build">${it.getBuildCount()}</span></h6>
         </colgroup>
         <colgroup><col width="30"/><col width="200*"/><col width="24"/></colgroup>
-        <j:if test="${it.getItemCount() == 0}">
+        <j:if test="${it.getBuildCount() == 0}">
             <tr>
                 <td class="pane" colspan="3">
-                    No build in the queue
-                </td>
+                  	No current build
+              	</td>
             </tr>
         </j:if>
-        <j:if test="${it.getItemCount() != 0}">
-            <tr>
+        <j:if test="${it.getBuildCount() != 0}">
+            <tr >
                 <th class="pane" colspan="1">
                     S.
                 </th>
@@ -70,11 +70,11 @@ THE SOFTWARE.
                     Master
                 </th>
             </tr>
-            <tbody id="tbody_queue_id">
-                <j:forEach var="item" items="${it.getLastQueuedItems()}">
+            <tbody id="tbody_build_id">
+                <j:forEach var="item" items="${it.getLastCurrentBuilds()}">
                     <tr>
                         <td class="pane" colspan="1">
-                            <img src="images/24x24/grey.png"></img>
+                            <img src="images/24x24/blue_anime.gif"></img>
                         </td>
                         <td class="pane" colspan="1">
                             ${item.getName()}

@@ -52,12 +52,14 @@ public class ElasticJenkinsAction implements Action {
         return project;
     }
 
+
+
     @JavaScriptMethod
     public List<GenericBuild> getPaginatedHistory(@Nonnull String type,
                                                   @Nonnull String viewType,
                                                   @Nonnull Integer paginationSize,@Nonnull String paginationStart) {
         ElasticManager elasticManager = new ElasticManager();
-        String index = ElasticJenkinsUtil.getHash(project.getUrl());
+        String index = ElasticJenkinsUtil.getHash(project.getUrl().split("/$")[0]);
 
         String masters = master;
         if(viewType.equals("cluster"))
@@ -74,7 +76,7 @@ public class ElasticJenkinsAction implements Action {
         //TODO: Add a method to search by parameters
         //TODO: Check if new builds came and update the list in a nice fashion
         ElasticManager elasticManager = new ElasticManager();
-        String index = ElasticJenkinsUtil.getHash(project.getUrl());
+        String index = ElasticJenkinsUtil.getHash(project.getUrl().split("/$")[0]);
         Gson gson = new Gson();
 
         String masters = master;
@@ -87,7 +89,7 @@ public class ElasticJenkinsAction implements Action {
     @JavaScriptMethod
     public String getNewResultsJson(@Nonnull String type,@Nonnull String viewType,@Nonnull String lastFetch) {
         ElasticManager elasticManager = new ElasticManager();
-        String index = ElasticJenkinsUtil.getHash(project.getUrl());
+        String index = ElasticJenkinsUtil.getHash(project.getUrl().split("/$")[0]);
         Gson gson = new Gson();
         String masters = master;
         if(viewType.equals("cluster"))
@@ -108,7 +110,7 @@ public class ElasticJenkinsAction implements Action {
 
     public String getBuildByParameters(@Nonnull String type,@Nonnull String viewType,@Nonnull String parameter) {
         ElasticManager elasticManager = new ElasticManager();
-        String index = ElasticJenkinsUtil.getHash(project.getUrl());
+        String index = ElasticJenkinsUtil.getHash(project.getUrl().split("/$")[0]);
         Gson gson = new Gson();
         String masters = master;
         if(viewType.equals("cluster"))
@@ -120,7 +122,7 @@ public class ElasticJenkinsAction implements Action {
     public void writeOutput(XMLOutput out,String id) throws IOException, SAXException {
         ElasticManager elasticManager = new ElasticManager();
         //Get log id
-        String index = ElasticJenkinsUtil.getHash(project.getUrl());
+        String index = ElasticJenkinsUtil.getHash(project.getUrl().split("/$")[0]);
         String suffix = elasticManager.getLogOutputId(index,"builds",id);
         List<String> list = elasticManager.getLogOutput(URLDecoder.decode(suffix,"UTF-8"));
         for(String row: list) {

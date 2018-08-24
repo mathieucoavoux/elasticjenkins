@@ -50,19 +50,21 @@ public class ElasticJenkinsWrapper extends SimpleBuildWrapper {
 
 	public static final class DisposerImpl extends Disposer {
 		public String id;
+		public String projectId;
 
 	    public DisposerImpl(Run<?,?> build) {
 	        //We save the build here when it starts
 			ElasticManager em = new ElasticManager();
 			//The hash of the project name is used for the index
-			String index = ElasticJenkinsUtil.getHash(build.getUrl().split(build.getId())[0]);
+            String buildUrl = build.getUrl().split("/"+build.getId()+"/$")[0];
+			String index = ElasticJenkinsUtil.getHash(buildUrl);
 			try {
-				em.addProjectMapping(index,URLEncoder.encode(build.getUrl().split(build.getId())[0],ElasticJenkinsUtil.getProperty("elasticCharset")));
+				this.projectId = em.addProjectMapping(index,URLEncoder.encode(buildUrl,ElasticJenkinsUtil.getProperty("elasticCharset")));
 			} catch (UnsupportedEncodingException e) {
 				LOGGER.log(Level.SEVERE,"Charset not supported:"+ElasticJenkinsUtil.getProperty("elasticCharset"));
 			}
 			LOGGER.log(Level.FINEST,"Job hash: "+index);
-			id = em.addBuild(index,"builds",build);
+			id = em.addBuild(projectId,"builds",build);
 
         }
 
@@ -73,8 +75,9 @@ public class ElasticJenkinsWrapper extends SimpleBuildWrapper {
                 //Update the status of the build and add the log output
 				LOGGER.log(Level.INFO,"Elasticsearch plugin build tearDown disposerImpl");
 				LOGGER.log(Level.INFO,"Id:"+id);
+
 				ElasticManager em = new ElasticManager();
-				String index = ElasticJenkinsUtil.getHash(build.getUrl().split(build.getId())[0]);
+
 				int maxLines = (int) Files.lines(build.getLogFile().toPath()).count();
 				String status = "";
 				if (build instanceof Run) {
@@ -87,7 +90,7 @@ public class ElasticJenkinsWrapper extends SimpleBuildWrapper {
 					}
 
 				}
-				id = em.updateBuild(index,"builds",build,id,status,build.getLog(maxLines));
+				id = em.updateBuild("jenkins_builds","builds",build,id,status,build.getLog(maxLines));
             }
         }
     }

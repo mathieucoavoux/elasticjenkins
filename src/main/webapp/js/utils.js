@@ -52,3 +52,44 @@ function addContent(json,location) {
 
     }
 }
+
+function addContentSpan(json) {
+}
+
+function addContentPanel(json,panel_name) {
+
+    var array = JSON.parse(json);
+
+    var new_tbody = document.createElement("tbody");
+    new_tbody.setAttribute("name",panel_name);
+    new_tbody.setAttribute("id",panel_name);
+    for(i=0;i<array.length;i++) {
+        var tr = document.createElement("tr");
+
+        var tdIcon = document.createElement("td");
+        if(panel_name == "tbody_build_id") {
+            var icon_name = "blue_anime.gif";
+        }else{
+            var icon_name = "grey.png";
+        }
+        var icon = "<img src=\"images/24x24/"+icon_name+"\"></img>";
+        tdIcon.innerHTML = icon;
+
+        var tdName = document.createElement("td");
+        var name = document.createTextNode(array[i].name);
+        tdName.appendChild(name);
+
+        var tdMaster = document.createElement("td");
+        var master = document.createTextNode(array[i].jenkinsMasterName);
+        tdMaster.appendChild(master);
+
+        tr.appendChild(tdIcon);
+        tr.appendChild(tdName);
+        tr.appendChild(tdMaster);
+        new_tbody.appendChild(tr);
+    }
+
+    var old_tbody = document.getElementById(panel_name);
+    old_tbody.parentNode.replaceChild(new_tbody, old_tbody);
+
+}

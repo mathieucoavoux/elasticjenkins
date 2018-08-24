@@ -63,4 +63,16 @@ public class ElasticJenkinsUtilTest {
         assertEquals(null,masterId);
 
     }
+
+    @Test
+    public void testGetCurrentMasterId() throws InterruptedException {
+        ElasticManager em = new ElasticManager();
+        ElasticJenkinsManagement elasticJenkinsManagement = new ElasticJenkinsManagement();
+        if(elasticJenkinsManagement.addJenkinsMaster(master,clusterName,"TEST_SERVER","MASTERID123")) {
+            //As elastic search may takes time to create the server
+            Thread.sleep(2000);
+            assertEquals("MASTERID123",ElasticJenkinsUtil.getCurentMasterId());
+        }
+
+    }
 }

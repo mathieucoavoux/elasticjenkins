@@ -125,6 +125,9 @@ public class ElasticJenkinsManagement extends ManagementLink {
         //Save the properties
         ElasticJenkinsUtil elasticJenkinsUtil = new ElasticJenkinsUtil();
         elasticJenkinsUtil.setCharset(charset);
+        elasticJenkinsUtil.setMasterName(masterName);
+        elasticJenkinsUtil.setClusterName(clusterName);
+        elasticJenkinsUtil.setUrl(persistenceStore);
         if(!ElasticJenkinsUtil.writeProperties(masterName,clusterName , persistenceStore,charset,jenkinsLogs ))
             return HttpResponses.redirectTo(".?error");
 
@@ -147,7 +150,7 @@ public class ElasticJenkinsManagement extends ManagementLink {
         String url = ElasticJenkinsUtil.getProperty("persistenceStore");
         String uri = url+"/"+indexJenkinsCluster+"/clusters/";
         if(masterId != null)
-            uri.concat(masterId);
+            uri = uri.concat(masterId);
 
         ElasticMaster em = new ElasticMaster();
         em.setJenkinsMasterName(jenkinsMaster);

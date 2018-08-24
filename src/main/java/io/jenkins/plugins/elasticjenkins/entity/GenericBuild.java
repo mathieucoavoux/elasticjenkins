@@ -84,6 +84,31 @@ public class GenericBuild {
 
     @Nonnull
     protected String jenkinsMasterName;
+
+
+    @Nonnull
+    public String getJenkinsMasterId() {
+        return jenkinsMasterId;
+    }
+
+    public void setJenkinsMasterId(@Nonnull String jenkinsMasterId) {
+        this.jenkinsMasterId = jenkinsMasterId;
+    }
+
+    @Nonnull
+    protected String jenkinsMasterId;
+
+    @Nonnull
+    public String getProjectId() {
+        return projectId;
+    }
+
+    public void setProjectId(@Nonnull String projectId) {
+        this.projectId = projectId;
+    }
+
+    @Nonnull
+    protected String projectId;
     /**
      * Who has executed the job
      */

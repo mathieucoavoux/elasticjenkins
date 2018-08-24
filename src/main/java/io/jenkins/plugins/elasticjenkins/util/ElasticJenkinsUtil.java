@@ -2,6 +2,8 @@ package io.jenkins.plugins.elasticjenkins.util;
 
 
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.jayway.jsonpath.JsonPath;
 import jenkins.model.Jenkins;
 import org.apache.http.client.methods.*;
@@ -27,8 +29,15 @@ public class ElasticJenkinsUtil {
 
     protected static File propertiesFile = new File(Jenkins.getInstance().getRootDir()+"/elasticjenkins.properties");
 
-    private static String indexJenkinsCluster = "jenkins_manage_clusters";
+    private static String jenkinsManageIndexCluster = "jenkins_manage_clusters";
+    private static String jenkinsManageIndexMapping = "jenkins_manage_mapping";
+    private static String jenkinsManageClusters = "clusters";
+    private static String jenkinsManageMapping = "mapping";
+
     protected static String charset = ElasticJenkinsUtil.getProperty("elasticCharset");
+    protected static String masterName = ElasticJenkinsUtil.getProperty("masterName");
+    protected static String clusterName = ElasticJenkinsUtil.getProperty("clusterName");
+    protected static String url = ElasticJenkinsUtil.getProperty("persistenceStore");
 
     /**
      * Get the job url to take the project name as the project display name can contain
@@ -77,6 +86,12 @@ public class ElasticJenkinsUtil {
     public void setCharset(String charset) {
         this.charset = charset;
     }
+
+    public void setMasterName(String masterName) { this.masterName = masterName; }
+
+    public void setClusterName(String clusterName){ this.clusterName = clusterName;}
+
+    public void setUrl(String url){ this.url = url;}
 
     /**
      * Get a property from the elasticjenkins file properties
@@ -166,7 +181,7 @@ public class ElasticJenkinsUtil {
     }
 
     public static String getIdByMaster(@Nonnull String master) {
-        String uri = getProperty("persistenceStore")+"/"+indexJenkinsCluster+"/clusters/_search";
+        String uri = getProperty("persistenceStore")+"/"+ jenkinsManageIndexCluster +"/clusters/_search";
         String json = "{ \"query\" : {\n" +
                 "  \"match\" : {\n" +
                 "    \"jenkinsMasterName\" : \""+master+"\" \n" +
@@ -310,4 +325,66 @@ public class ElasticJenkinsUtil {
         return master;
 
     }
+
+    protected static String getCurentMasterId() {
+        String uri = url+"/"+jenkinsManageIndexCluster+"/"+jenkinsManageClusters+"/_search";
+        //First we check if the hash has been already saved
+        String jsonReq = "{ \"query\" : { \n" +
+                " \"bool\" : {\n" +
+                " \"must\" : [\n" +
+                "     { \"match\" : { \"jenkinsMasterName\" : \""+masterName+"\" }},\n" +
+                "     { \"match\" : { \"clusterName\": \""+clusterName+"\"}}\n" +
+                "     ]\n" +
+                "}\n" +
+                "}\n" +
+                "}";
+
+        String jsonResponse = ElasticJenkinsUtil.elasticPost(uri,jsonReq);
+        Integer max = JsonPath.parse(jsonResponse).read("$.hits.hits.length()");
+        if(max != 1) {
+            LOGGER.log(Level.SEVERE, "The number of master ({0}) found: {1} ",new Object[]{masterName,max});
+            return null;
+        }
+        Gson gson = new GsonBuilder().create();
+        return  gson.fromJson(JsonPath.parse(jsonResponse).read(
+                "$.hits.hits[0]._id").toString(),String.class);
+    }
+
+    public static Integer getCountCurrentBuilds(String masters) {
+        String uri = url+"/jenkins_builds/builds/_count";
+        //First we check if the hash has been already saved
+        String jsonReq = "{ \"query\" : { \n" +
+                " \"bool\" : {\n" +
+                " \"must\" : [\n" +
+                "     { \"match\" : { \"status\" : \"EXECUTING\" }},\n" +
+                "     { \"match\" : { \"jenkinsMasterName\" : \""+masters+"\" }}\n" +
+                "     ]\n" +
+                "}\n" +
+                "}\n" +
+                "}";
+
+        String jsonResponse = ElasticJenkinsUtil.elasticPost(uri,jsonReq);
+        return JsonPath.parse(jsonResponse).read("$.count");
+
+    }
+
+    public static Integer getCountCurrentItem(String masters) {
+        String uri = url+"/jenkins_queues/queues/_count";
+        //First we check if the hash has been already saved
+        String jsonReq = "{ \"query\" : { \n" +
+                " \"bool\" : {\n" +
+                " \"must\" : [\n" +
+                "     { \"match\" : { \"status\" : \"ENQUEUED\" }},\n" +
+                "     { \"match\" : { \"jenkinsMasterName\" : \""+masters+"\" }}\n" +
+                "     ]\n" +
+                "}\n" +
+                "}\n" +
+                "}";
+
+        String jsonResponse = ElasticJenkinsUtil.elasticPost(uri,jsonReq);
+        return JsonPath.parse(jsonResponse).read("$.count");
+
+    }
+
+
 }

@@ -5,8 +5,11 @@ import hudson.ExtensionList;
 import hudson.ExtensionPoint;
 import hudson.model.Queue;
 import hudson.model.queue.QueueListener;
+import io.jenkins.plugins.elasticjenkins.util.ElasticJenkinsUtil;
 import io.jenkins.plugins.elasticjenkins.util.ElasticManager;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -16,11 +19,19 @@ public class ElasticJenkinsListener extends QueueListener implements ExtensionPo
     private static final Logger LOGGER = Logger.getLogger(ElasticJenkinsListener.class.getName());
 
     public String id;
+    public String projectId;
 
     @Override
     public void onEnterWaiting(Queue.WaitingItem waitingItem) {
         ElasticManager elasticManager = new ElasticManager();
-        this.id = elasticManager.addQueueItem(waitingItem);
+        String buildUrl = waitingItem.task.getUrl().split("/"+waitingItem.getId()+"/$")[0];
+        String index = ElasticJenkinsUtil.getHash(buildUrl);
+        try {
+            this.projectId = elasticManager.addProjectMapping(index,URLEncoder.encode(buildUrl,ElasticJenkinsUtil.getProperty("elasticCharset")));
+        } catch (UnsupportedEncodingException e) {
+            LOGGER.log(Level.SEVERE,"Charset not supported:"+ElasticJenkinsUtil.getProperty("elasticCharset"));
+        }
+        this.id = elasticManager.addQueueItem(waitingItem,this.projectId);
     }
 
     @Override
