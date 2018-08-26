@@ -28,15 +28,15 @@
                             }
 
 
-                            eja.getPagninatedHistoryJson(type,view_type,'20',number,function(t) {
-                                   array = t.responseObject();
-                                    addContent(array,'after');
+                            eja.getPagninatedHistoryJson(type,view_type,'20',number,function(old) {
+                                   old_build_action = old.responseObject();
+                                    addContent(old_build_action,'after');
 
                             });
 
-                           eja.getNewResultsJson(type,view_type,last_fetch,function(t) {
-                              array = t.responseObject();
-                               addContent(array,'before');
+                           eja.getNewResultsJson(type,view_type,last_fetch,function(neb) {
+                              new_build_action = neb.responseObject();
+                               addContent(new_build_action,'before');
 
                            });
                         last_fetch = new Date().getTime();
@@ -61,9 +61,9 @@
                         new_tbody.setAttribute("id","result_tbody");
                         var old_tbody = document.getElementById("result_tbody");
                         old_tbody.parentNode.replaceChild(new_tbody, old_tbody);
-                        eja.filterResult('builds',view_type,filter_type,filter_value,function(t) {
-                               array = t.responseObject();
-                                addContent(array,'after');
+                        eja.filterResult('builds',view_type,filter_type,filter_value,function(fil) {
+                               array_filter = fil.responseObject();
+                                addContent(array_filter,'after');
                         });
                     }
             </script>

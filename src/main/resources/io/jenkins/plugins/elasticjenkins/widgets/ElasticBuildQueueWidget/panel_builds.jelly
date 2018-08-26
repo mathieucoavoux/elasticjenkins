@@ -37,7 +37,7 @@ THE SOFTWARE.
                 var ebqw = <st:bind value="${it}" />;
                 ebqw.getLastCurrentBuildsJson(function(bj) {
                     current_build_json = bj.responseObject();
-                    addContentPanel(current_build_json,"tbody_build_id");
+                    addContentPanel(current_build_json,"build");
                 });
                 var span_build = document.getElementById("span_count_build");
                 ebqw.getBuildCount(function(bc) {
@@ -52,29 +52,40 @@ THE SOFTWARE.
         </colgroup>
         <colgroup><col width="30"/><col width="200*"/><col width="24"/></colgroup>
         <j:if test="${it.getBuildCount() == 0}">
+            <tbody id="div_build_no_result">
             <tr>
                 <td class="pane" colspan="3">
                   	No current build
               	</td>
             </tr>
+            </tbody>
+            <tbody id="tbody_build_id">
+            </tbody>
         </j:if>
         <j:if test="${it.getBuildCount() != 0}">
-            <tr >
-                <th class="pane" colspan="1">
-                    S.
-                </th>
-                <th class="pane" colspan="1">
-                    Name
-                </th>
-                <th class="pane" colspan="1">
-                    Master
-                </th>
-            </tr>
+            <tbody id="div_build_no_result" style="display:none">
+                <tr>
+                    <td class="pane" colspan="3">
+                        No current build
+                    </td>
+                </tr>
+            </tbody>
             <tbody id="tbody_build_id">
+                <tr >
+                    <th class="pane" colspan="1">
+                        N.
+                    </th>
+                    <th class="pane" colspan="1">
+                        Name
+                    </th>
+                    <th class="pane" colspan="1">
+                        Master
+                    </th>
+                </tr>
                 <j:forEach var="item" items="${it.getLastCurrentBuilds()}">
                     <tr>
                         <td class="pane" colspan="1">
-                            <img src="images/24x24/blue_anime.gif"></img>
+                            ${item.getId()}
                         </td>
                         <td class="pane" colspan="1">
                             ${item.getName()}

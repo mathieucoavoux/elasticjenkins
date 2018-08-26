@@ -41,6 +41,10 @@ public class ElasticManagerTest  {
     public String uniqueId = "20170428";
     public String title = "PROJECT_NAME";
     public String logIndex = "jenkins_logs";
+    public String buildsIndex = "jenkins_builds";
+    public String queueIndex = "jenkins_queues";
+    public String clusterIndex = "jenkins_manage_clusters";
+    public String mappingIndex = "jenkins_manage_mapping";
 
     public static String url = "http://localhost:9200";
 
@@ -62,6 +66,23 @@ public class ElasticManagerTest  {
         HttpClientBuilder builder = HttpClientBuilder.create();
         CloseableHttpClient client = builder.build();
         CloseableHttpResponse response = client.execute(httpDelete);
+    }
+
+    public void deleteIndices() throws IOException, InterruptedException {
+        List<String> list = new ArrayList<>();
+        list.add(logIndex);
+        list.add(buildsIndex);
+        list.add(queueIndex);
+        list.add(clusterIndex);
+        list.add(mappingIndex);
+        for(String uri : list) {
+            HttpDelete httpDelete = new HttpDelete(url+"/"+uri);
+            httpDelete.setHeader("Accept","application/json");
+            HttpClientBuilder builder = HttpClientBuilder.create();
+            CloseableHttpClient client = builder.build();
+            CloseableHttpResponse response = client.execute(httpDelete);
+        }
+        Thread.sleep(2000);
     }
 
 
@@ -107,7 +128,8 @@ public class ElasticManagerTest  {
     @Before
     public void setUp() throws IOException, InterruptedException {
         //ElasticJenkinsUtil.writeProperties(master,url,"UTF-16",logIndex);
-        ElasticJenkinsUtil.writeProperties(master,clusterName , url,"UTF-8",logIndex );
+        ElasticJenkinsUtil.writeProperties(master,clusterName , url,"UTF-8",logIndex,buildsIndex,queueIndex,clusterIndex,mappingIndex );
+
     }
 
     /**
@@ -119,16 +141,19 @@ public class ElasticManagerTest  {
      */
     @Test
     public void allTests() throws IOException, InterruptedException {
-        //Create index
-        //createIndex();
+
+        createIndex();
+        ElasticJenkinsManagement elasticJenkinsManagement = new ElasticJenkinsManagement();
+        elasticJenkinsManagement.addJenkinsMaster(master,clusterName,"TEST_SERVER",master,clusterIndex);
+        Thread.sleep(2000);
         //Add build
-        //addBuild();
+        addBuild();
 
         //Update build
         updateBuild();
 
         //Search by id
-        //searchById();
+        searchById();
 
         //Get pagination
         //testGetPaginateBuildHistory();
@@ -138,12 +163,14 @@ public class ElasticManagerTest  {
 
         //testFindByParameter();
 
-        //testGetProjectId();
+        testGetProjectId();
+
+        deleteIndices();
     }
 
     public void createIndex() {
         ElasticManager em = new ElasticManager();
-        em.createManageIndex();
+        ElasticJenkinsUtil.createManageIndex();
     }
 
 
@@ -154,8 +181,8 @@ public class ElasticManagerTest  {
         String index = "jenkins_test";
         String type = "builds";
         String idElastic = em.addBuild(index,type,build);
-        assertTrue(idElastic.equals("1_b_"+master));
-        deleleTest(index,type,"1_b_"+master);
+        assertTrue(idElastic.equals("1_"+index+"_"+master));
+        deleleTest(index,type,"1_"+index+"_"+master);
     }
 
 
@@ -177,12 +204,12 @@ public class ElasticManagerTest  {
             writer.append(row);
         writer.close();
         PowerMockito.when(build.getLogFile()).thenReturn(file);
-        String idUpdated = em.updateBuild(index,type,build,idElastic,"COMPLETED",logs);
-        assertEquals("1_b_"+master,idUpdated);
+        String idUpdated = em.updateBuild("jenkins_builds",type,build,idElastic,"COMPLETED",logs);
+        assertEquals("1_"+index+"_"+master,idUpdated);
         String idLog = em.searchById(index,type,idUpdated).getLogId();
         assertTrue(idLog != null);
         deleteTest(logIndex,idLog);
-        deleleTest(index,type,"1_b_"+master);
+        deleleTest(index,type,"1_"+index+"_"+master);
         if(file.exists()) file.delete();
 
     }
@@ -195,7 +222,7 @@ public class ElasticManagerTest  {
         String type = "builds";
         String fileName = "testUpdate2.log";
         String idElastic = em.addBuild(index,type,build);
-        assertTrue(idElastic.equals("1_b_"+master));
+        assertTrue(idElastic.equals("1_"+index+"_"+master));
 
         List<String> logs = new ArrayList<>();
 
@@ -213,18 +240,18 @@ public class ElasticManagerTest  {
         writer.flush();
         writer.close();
         PowerMockito.when(build.getLogFile()).thenReturn(file);
-        String idUpdated = em.updateBuild(index,type,build,idElastic,"COMPLETED",logs);
+        String idUpdated = em.updateBuild("jenkins_builds",type,build,idElastic,"COMPLETED",logs);
         assertEquals(idElastic,idUpdated);
         GenericBuild genericBuild = em.searchById(index,type,idElastic);
         String idLog = genericBuild.getLogId();
         assertTrue(idLog != null);
-        List<String> outputList = em.getLogOutput(URLDecoder.decode(idLog,"UTF-16"));
+        List<String> outputList = em.getLogOutput(URLDecoder.decode(idLog,"UTF-8"));
         for(int ind=0;ind<outputList.size();ind++) {
-            assertEquals(logs.get(ind),URLDecoder.decode(outputList.get(ind),"UTF-16"));
+            assertEquals(URLDecoder.decode(outputList.get(ind),"UTF-8"),logs.get(ind));
         }
 
         deleteTest(logIndex,idLog);
-        deleleTest(index,type,"1_"+master);
+        deleleTest(index,type,"1_"+index+"_"+master);
         if(file.exists()) file.delete();
     }
 
@@ -237,7 +264,7 @@ public class ElasticManagerTest  {
         }
         //Let elasticsearch save the entries correctly
         Thread.sleep(2000);
-        List<GenericBuild> list = em.getPaginateBuildHistory(index,type,master , 2, "5");
+        List<GenericBuild> list = em.getPaginateBuildHistory(index,type,"clusters" , 2, "5");
         assertEquals("4",list.get(0).getId());
         assertEquals("3",list.get(1).getId());
         for(int i=1;i<10;i++) {
@@ -249,7 +276,7 @@ public class ElasticManagerTest  {
         ElasticManager em = new ElasticManager();
         String index = "jenkins_test";
         String type = "builds";
-        em.addProjectMapping(ElasticJenkinsUtil.getHash(index),URLEncoder.encode(index,"UTF-16"));
+        em.addProjectMapping(ElasticJenkinsUtil.getHash(index),URLEncoder.encode(index,"UTF-8"));
 
     }
 

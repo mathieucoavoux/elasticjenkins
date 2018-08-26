@@ -16,9 +16,11 @@ public class ElasticLogHandlerTest {
     public static String master = "MASTERNAME";
     public static String clusterName = "myCluster";
     public static String hostname = "MyMaster2";
-    private static String indexJenkinsIndexCluster = "jenkins_manage_clusters";
-    private static String indexJenkinsIndexMapping = "jenkins_manage_mapping";
     private static String indexLog = "jenkins_logs";
+    public String buildsIndex = "jenkins_builds";
+    public String queueIndex = "jenkins_queues";
+    public String clusterIndex = "jenkins_manage_clusters";
+    public String mappingIndex = "jenkins_manage_mapping";
 
     private static String testFolder = "elasticjenkins";
 
@@ -76,7 +78,7 @@ public class ElasticLogHandlerTest {
     @Before
     public void setUp() throws IOException, InterruptedException {
         //ElasticJenkinsUtil.writeProperties(master,url,"UTF-16",logIndex);
-        ElasticJenkinsUtil.writeProperties(master,clusterName , url,"UTF-8",indexLog );
+        ElasticJenkinsUtil.writeProperties(master,clusterName , url,"UTF-8",indexLog,buildsIndex,queueIndex,clusterIndex,mappingIndex );
     }
 
     @Ignore

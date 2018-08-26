@@ -27,7 +27,6 @@ public class ElasticJenkinsManagement extends ManagementLink {
 
     protected String title = "Elasticjenkins management";
 
-    private static String indexJenkinsCluster = "jenkins_manage_clusters";
 
     @CheckForNull
     @Override
@@ -52,7 +51,7 @@ public class ElasticJenkinsManagement extends ManagementLink {
      * For example: http://localhost:9200
      * @return: return the URL
      */
-    public String getPersistenceStore() { return ElasticJenkinsUtil.getProperty("persistenceStore");}
+    public String getPersistenceStore() { return ElasticJenkinsUtil.getUrl();}
 
     /**
      * Return the Jenkins master name. If the name has never been set it returns hostname and the pid concatenated
@@ -61,7 +60,7 @@ public class ElasticJenkinsManagement extends ManagementLink {
      * @return: Jenkins master name
      */
     public String getJenkinsMaster() {
-        String master = ElasticJenkinsUtil.getProperty("masterName");
+        String master = ElasticJenkinsUtil.getMasterName();
         if(master == null) {
                 master = ElasticJenkinsUtil.getHostname()+System.currentTimeMillis();
         }
@@ -73,21 +72,40 @@ public class ElasticJenkinsManagement extends ManagementLink {
      * @return: charset
      */
     public String getJenkinsCharset() {
-        String charset = ElasticJenkinsUtil.getProperty("elasticCharset");
+        String charset = ElasticJenkinsUtil.getCharset();
         return charset == null ? "UTF-8" : charset;
     }
 
     /**
      * Get the index name use to store the log output
-     * @return
+     * @return: the index use for the log
      */
     public String getLogIndex() {
-        String charset = ElasticJenkinsUtil.getProperty("logIndex");
-        return charset == null ? "jenkins_logs" : charset;
+        String logIndex = ElasticJenkinsUtil.getProperty("logIndex");
+        return logIndex == null ? "jenkins_logs" : logIndex;
     }
 
+    public String getJenkinsBuilds() {
+        String jenkinsBuildsIndex = ElasticJenkinsUtil.getJenkinsBuildsIndex();
+        return jenkinsBuildsIndex == null ? "jenkins_builds" : jenkinsBuildsIndex;
+    }
+
+    public String getJenkinsQueues() {
+        String jenkinsManageMappingIndex = ElasticJenkinsUtil.getJenkinsQueuesIndex();
+        return jenkinsManageMappingIndex == null ? "jenkins_queues" : jenkinsManageMappingIndex;
+    }
+
+    public String getJenkinsClusterIndex() {
+        String jenkinsClusterIndex= ElasticJenkinsUtil.getJenkinsManageIndexCluster();
+        return jenkinsClusterIndex == null ? "jenkins_manage_clusters" : jenkinsClusterIndex;
+    }
+
+    public String getJenkinsManageIndex() {
+        String jenkinsManageMappingIndex = ElasticJenkinsUtil.getJenkinsManageIndexMapping();
+        return jenkinsManageMappingIndex == null ? "jenkins_manage_mapping" : jenkinsManageMappingIndex;
+    }
     public String getClusterName() {
-        return ElasticJenkinsUtil.getProperty("clusterName");
+        return ElasticJenkinsUtil.getClusterName();
     }
 
     /**
@@ -99,12 +117,20 @@ public class ElasticJenkinsManagement extends ManagementLink {
      * @param persistenceStore: Url of the persistence store
      * @param charset: charset used for the log output
      * @param clusterName: The name of the cluster which this server will join. This will allow to see builds from other members
-     * @return: response
+     * @param jenkinsLogs: The index use to store the log output
+     * @param jenkinsBuilds: The index use to store the builds
+     * @param jenkinsQueues: The index use to store the queued items
+     * @param forceCreation: If set to true we force to save the new node configuration in Elasticsearch even if it exists
+     *                     otherwise it will fail.
+     * @param jenkinsClusterIndex: The index of the cluster configuration
+     * @param jenkinsManageIndex: The index use for the project mapping.
+     * @return: response if the configuration has been saved successfully or not
      */
     public HttpResponse doConfigure(@QueryParameter String masterName, @QueryParameter String persistenceStore,
                                     @QueryParameter String charset, @QueryParameter String clusterName,
-                                    @QueryParameter String jenkinsLogs,
-                                    @QueryParameter boolean forceCreation) {
+                                    @QueryParameter String jenkinsLogs, @QueryParameter String jenkinsBuilds,
+                                    @QueryParameter String jenkinsQueues, @QueryParameter boolean forceCreation,
+                                    @QueryParameter String jenkinsClusterIndex,@QueryParameter String jenkinsManageIndex) {
         //Check if the form is filled correctly
         if(masterName == null || masterName.isEmpty() || persistenceStore == null || masterName.isEmpty()
                 || charset == null || charset.isEmpty() ||
@@ -120,24 +146,28 @@ public class ElasticJenkinsManagement extends ManagementLink {
         }
         //Create indexes if they are not existing yet
         ElasticManager elasticManager = new ElasticManager();
-        elasticManager.createManageIndex();
+
+
+
         LOGGER.log(Level.FINEST,"masterName:{0},persistenceStore:{1},charset:{2},clusterName:{3},jenkinsLogs:{4}", new Object[]{masterName,persistenceStore,charset,clusterName,jenkinsLogs});
         //Save the properties
-        ElasticJenkinsUtil elasticJenkinsUtil = new ElasticJenkinsUtil();
-        elasticJenkinsUtil.setCharset(charset);
-        elasticJenkinsUtil.setMasterName(masterName);
-        elasticJenkinsUtil.setClusterName(clusterName);
-        elasticJenkinsUtil.setUrl(persistenceStore);
-        if(!ElasticJenkinsUtil.writeProperties(masterName,clusterName , persistenceStore,charset,jenkinsLogs ))
+
+
+        if(!ElasticJenkinsUtil.writeProperties(masterName,clusterName , persistenceStore,charset,jenkinsLogs,jenkinsBuilds,
+                jenkinsQueues,jenkinsClusterIndex,jenkinsManageIndex ))
             return HttpResponses.redirectTo(".?error");
 
         //Check if the master exist already
-        String masterId = ElasticJenkinsUtil.getIdByMaster(masterName);
+        String masterId = null;
+        if(ElasticJenkinsUtil.isInitialized() == true &&
+                ElasticJenkinsUtil.elasticHead(persistenceStore+"/"+jenkinsClusterIndex+"/_mapping/clusters") == 200)
+            masterId = ElasticJenkinsUtil.getIdByMaster(masterName);
         if(masterId != null && ! forceCreation)
             return HttpResponses.redirectTo(".?exists");
 
+
         //Save the new master in the manage index
-        if(addJenkinsMaster(masterName,clusterName,ElasticJenkinsUtil.getHostname(),masterId))
+        if(addJenkinsMaster(masterName,clusterName,ElasticJenkinsUtil.getHostname(),masterId,jenkinsClusterIndex))
             return HttpResponses.redirectTo(".?success");
 
 
@@ -145,9 +175,9 @@ public class ElasticJenkinsManagement extends ManagementLink {
     }
 
     public boolean addJenkinsMaster(@Nonnull String jenkinsMaster, @Nonnull String clusterName,
-                                           @Nonnull String hostname, @Nullable String masterId) {
+                                           @Nonnull String hostname, @Nullable String masterId, @Nonnull String indexJenkinsCluster) {
         //We let Elasticsearch manage the ID
-        String url = ElasticJenkinsUtil.getProperty("persistenceStore");
+        String url = ElasticJenkinsUtil.getUrl();
         String uri = url+"/"+indexJenkinsCluster+"/clusters/";
         if(masterId != null)
             uri = uri.concat(masterId);

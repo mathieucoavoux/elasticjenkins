@@ -3,9 +3,14 @@ package io.jenkins.plugins.elasticjenkins;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import io.jenkins.plugins.elasticjenkins.util.ElasticJenkinsUtil;
 import io.jenkins.plugins.elasticjenkins.util.ElasticManager;
@@ -60,6 +65,11 @@ public class ElasticJenkinsWrapper extends SimpleBuildWrapper {
 			String index = ElasticJenkinsUtil.getHash(buildUrl);
 			try {
 				this.projectId = em.addProjectMapping(index,URLEncoder.encode(buildUrl,ElasticJenkinsUtil.getProperty("elasticCharset")));
+				if( ElasticJenkinsUtil.isEmpty) {
+					ElasticJenkinsUtil elasticJenkinsUtil = new ElasticJenkinsUtil();
+					elasticJenkinsUtil.setIsEmtpy(false);
+				}
+
 			} catch (UnsupportedEncodingException e) {
 				LOGGER.log(Level.SEVERE,"Charset not supported:"+ElasticJenkinsUtil.getProperty("elasticCharset"));
 			}
@@ -77,8 +87,8 @@ public class ElasticJenkinsWrapper extends SimpleBuildWrapper {
 				LOGGER.log(Level.INFO,"Id:"+id);
 
 				ElasticManager em = new ElasticManager();
-
-				int maxLines = (int) Files.lines(build.getLogFile().toPath()).count();
+				//Handle weird characters
+				//int maxLines = (int) Files.lines(build.getLogFile().toPath(), StandardCharsets.UTF_16).count();
 				String status = "";
 				if (build instanceof Run) {
 					if(build.getResult() != null) {
@@ -90,7 +100,10 @@ public class ElasticJenkinsWrapper extends SimpleBuildWrapper {
 					}
 
 				}
-				id = em.updateBuild("jenkins_builds","builds",build,id,status,build.getLog(maxLines));
+				Stream<String> stream = Files.lines(build.getLogFile().toPath());
+
+				//id = em.updateBuild("jenkins_builds","builds",build,id,status,build.getLog(maxLines));
+				id = em.updateBuild("jenkins_builds","builds",build,id,status,stream.collect(Collectors.toList()));
             }
         }
     }

@@ -27,9 +27,9 @@ public class ElasticJenkinsListener extends QueueListener implements ExtensionPo
         String buildUrl = waitingItem.task.getUrl().split("/"+waitingItem.getId()+"/$")[0];
         String index = ElasticJenkinsUtil.getHash(buildUrl);
         try {
-            this.projectId = elasticManager.addProjectMapping(index,URLEncoder.encode(buildUrl,ElasticJenkinsUtil.getProperty("elasticCharset")));
+            this.projectId = elasticManager.addProjectMapping(index,URLEncoder.encode(buildUrl,ElasticJenkinsUtil.getCharset()));
         } catch (UnsupportedEncodingException e) {
-            LOGGER.log(Level.SEVERE,"Charset not supported:"+ElasticJenkinsUtil.getProperty("elasticCharset"));
+            LOGGER.log(Level.SEVERE,"Charset not supported:"+ElasticJenkinsUtil.getCharset());
         }
         this.id = elasticManager.addQueueItem(waitingItem,this.projectId);
     }

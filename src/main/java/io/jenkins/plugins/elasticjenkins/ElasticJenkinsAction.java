@@ -27,10 +27,9 @@ import java.util.logging.Logger;
 public class ElasticJenkinsAction implements Action {
     private AbstractProject<?,?> project;
 
-    private static final Logger LOGGER = Logger.getLogger(ElasticJenkinsManagement.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(ElasticJenkinsAction.class.getName());
 
-    protected String master = ElasticJenkinsUtil.getProperty("masterName");
-    protected String cluster = ElasticJenkinsUtil.getProperty("clusterName");
+
 
     ElasticJenkinsAction(AbstractProject<?,?> project) {
         this.project = project;
@@ -61,29 +60,18 @@ public class ElasticJenkinsAction implements Action {
         ElasticManager elasticManager = new ElasticManager();
         String index = ElasticJenkinsUtil.getHash(project.getUrl().split("/$")[0]);
 
-        String masters = master;
-        if(viewType.equals("cluster"))
-            masters = elasticManager.getNodesByCluster(cluster);
-        LOGGER.log(Level.FINEST,"Cluster: "+masters);
-       return  elasticManager.getPaginateBuildHistory(index,type,masters , paginationSize, paginationStart);
+       return  elasticManager.getPaginateBuildHistory(index,type,viewType , paginationSize, paginationStart);
     }
 
     @JavaScriptMethod
     public String getPagninatedHistoryJson(@Nonnull String type,
                                            @Nonnull String viewType,
                                            @Nonnull Integer paginationSize,@Nonnull String paginationStart) {
-        //TODO: Add a parameter for the cluster name and master name
-        //TODO: Add a method to search by parameters
-        //TODO: Check if new builds came and update the list in a nice fashion
         ElasticManager elasticManager = new ElasticManager();
         String index = ElasticJenkinsUtil.getHash(project.getUrl().split("/$")[0]);
         Gson gson = new Gson();
 
-        String masters = master;
-        if(viewType.equals("cluster"))
-            masters = elasticManager.getNodesByCluster(cluster);
-
-        return gson.toJson(elasticManager.getPaginateBuildHistory(index,type,masters , paginationSize, paginationStart));
+        return gson.toJson(elasticManager.getPaginateBuildHistory(index,type,viewType , paginationSize, paginationStart));
     }
 
     @JavaScriptMethod
@@ -91,11 +79,9 @@ public class ElasticJenkinsAction implements Action {
         ElasticManager elasticManager = new ElasticManager();
         String index = ElasticJenkinsUtil.getHash(project.getUrl().split("/$")[0]);
         Gson gson = new Gson();
-        String masters = master;
-        if(viewType.equals("cluster"))
-            masters = elasticManager.getNodesByCluster(cluster);
 
-        return gson.toJson(elasticManager.getNewResults(index,type,lastFetch,masters ));
+
+        return gson.toJson(elasticManager.getNewResults(index,type,lastFetch,viewType ));
     }
 
     @JavaScriptMethod
@@ -112,10 +98,7 @@ public class ElasticJenkinsAction implements Action {
         ElasticManager elasticManager = new ElasticManager();
         String index = ElasticJenkinsUtil.getHash(project.getUrl().split("/$")[0]);
         Gson gson = new Gson();
-        String masters = master;
-        if(viewType.equals("cluster"))
-            masters = elasticManager.getNodesByCluster(cluster);
-        return gson.toJson(elasticManager.findByParameter(index,type,masters,parameter));
+        return gson.toJson(elasticManager.findByParameter(index,type,viewType,parameter));
     }
 
     @JavaScriptMethod

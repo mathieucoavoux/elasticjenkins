@@ -19,6 +19,8 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -29,15 +31,54 @@ public class ElasticJenkinsUtil {
 
     protected static File propertiesFile = new File(Jenkins.getInstance().getRootDir()+"/elasticjenkins.properties");
 
-    private static String jenkinsManageIndexCluster = "jenkins_manage_clusters";
-    private static String jenkinsManageIndexMapping = "jenkins_manage_mapping";
+    private static String jenkinsManageIndexCluster = ElasticJenkinsUtil.getProperty("jenkinsManageClusterIndex");
+    private static String jenkinsManageIndexMapping = ElasticJenkinsUtil.getProperty("jenkinsManageMappingIndex");
+    private static String jenkinsBuildsIndex = ElasticJenkinsUtil.getProperty("jenkinsBuildsIndex");
+    private static String jenkinsQueuesIndex = ElasticJenkinsUtil.getProperty("jenkinsQueuesIndex");
     private static String jenkinsManageClusters = "clusters";
     private static String jenkinsManageMapping = "mapping";
 
     protected static String charset = ElasticJenkinsUtil.getProperty("elasticCharset");
     protected static String masterName = ElasticJenkinsUtil.getProperty("masterName");
+
+    public static String getJenkinsManageIndexCluster() {
+        return jenkinsManageIndexCluster;
+    }
+
+    public static String getJenkinsManageIndexMapping() {
+        return jenkinsManageIndexMapping;
+    }
+
+    public static String getJenkinsBuildsIndex() {
+        return jenkinsBuildsIndex;
+    }
+
+    public static String getJenkinsQueuesIndex() {
+        return jenkinsQueuesIndex;
+    }
+
+    public static String getJenkinsManageClusters() {
+        return jenkinsManageClusters;
+    }
+
+    public static String getJenkinsManageMapping() {
+        return jenkinsManageMapping;
+    }
+
+    public static String getClusterName() {
+        LOGGER.log(Level.FINEST,"ClusterName:"+clusterName);
+        return clusterName;
+    }
+
+    public static String getUrl() {
+        return url;
+    }
+
     protected static String clusterName = ElasticJenkinsUtil.getProperty("clusterName");
     protected static String url = ElasticJenkinsUtil.getProperty("persistenceStore");
+
+    public static boolean isInitialized = ElasticJenkinsUtil.isInitialized();
+    public static boolean isEmpty = ElasticJenkinsUtil.isEmpty();
 
     /**
      * Get the job url to take the project name as the project display name can contain
@@ -80,18 +121,42 @@ public class ElasticJenkinsUtil {
     }
 
     public static String getCharset() {
-        return getProperty("elasticCharset");
+        return charset;
     }
 
-    public void setCharset(String charset) {
-        this.charset = charset;
+    public static void setCharset(String newCharset) {
+        charset = newCharset;
     }
 
-    public void setMasterName(String masterName) { this.masterName = masterName; }
+    public static String getMasterName() {
+        LOGGER.log(Level.FINEST,"masterName:"+masterName);
+        return masterName;}
 
-    public void setClusterName(String clusterName){ this.clusterName = clusterName;}
+    public static void setMasterName(String newMasterName) { masterName = newMasterName; }
 
-    public void setUrl(String url){ this.url = url;}
+    public static void setClusterName(String newClusterName){ clusterName = newClusterName;}
+
+    public static void setUrl(String newUrl){ url = newUrl;}
+
+    public static void setJenkinsManageIndexCluster(String newJenkinsManageIndexCluster) {
+        jenkinsManageIndexCluster = newJenkinsManageIndexCluster;
+    }
+
+    public static void setJenkinsManageIndexMapping(String newJenkinsManageIndexMapping){
+        jenkinsManageIndexMapping = newJenkinsManageIndexMapping;
+    }
+
+    public static void setJenkinsBuildsIndex(String newJenkinsBuildsIndex){
+        jenkinsBuildsIndex = newJenkinsBuildsIndex;
+    }
+
+    public static void setJenkinsQueuesIndex(String newJenkinsQueuesIndex) {
+        jenkinsQueuesIndex = newJenkinsQueuesIndex;
+    }
+
+    public static void setIsInitialized(boolean newIsInitialized){ isInitialized = newIsInitialized;}
+
+    public static void setIsEmtpy(boolean newIsEmpty){isEmpty = newIsEmpty;}
 
     /**
      * Get a property from the elasticjenkins file properties
@@ -126,22 +191,44 @@ public class ElasticJenkinsUtil {
     /**
      * Write properties used by ElasticJenkins plugin to the properties file
      * @param masterName : name of the Jenkins master
-     * @param clusterName
+     * @param clusterName: name of the Jenkins cluster
      * @param persistenceStore : URL of the persistence store
      * @param charset : charset used in the log output encoding
-     * @return: boolean
+     * @param logIndex: The index use to store the log output
+     * @param buildsIndex: The index use to store the builds
+     * @param queuesIndex: The index use to store the queued items
+     * @param clusterIndex: The index of the cluster configuration
+     * @param mappingIndex: The index use for the project mapping.
+     * @return: boolean true if saved successfully
      */
     public static synchronized boolean writeProperties(@Nonnull String masterName,
                                                        @Nonnull String clusterName,
                                                        @Nonnull String persistenceStore, @Nonnull String charset,
-                                                       @Nonnull String logIndex) {
+                                                       @Nonnull String logIndex, @Nonnull String buildsIndex,
+                                                       @Nonnull String queuesIndex,
+                                                       @Nonnull String clusterIndex, @Nonnull String mappingIndex) {
         OutputStream out = null;
+
+        setCharset(charset);
+        setMasterName(masterName);
+        setClusterName(clusterName);
+        setUrl(persistenceStore);
+        setJenkinsBuildsIndex(buildsIndex);
+        setJenkinsQueuesIndex(queuesIndex);
+        setJenkinsManageIndexCluster(clusterIndex);
+        setJenkinsManageIndexMapping(mappingIndex);
+        setIsInitialized(true);
+        createManageIndex();
         Properties props = new Properties();
         props.setProperty("masterName", masterName);
         props.setProperty("clusterName",clusterName);
         props.setProperty("persistenceStore", persistenceStore);
         props.setProperty("elasticCharset", charset);
         props.setProperty("jenkins_logs",logIndex);
+        props.setProperty("jenkinsBuildsIndex",buildsIndex);
+        props.setProperty("jenkinsQueuesIndex",queuesIndex);
+        props.setProperty("jenkinsManageClusterIndex",clusterIndex);
+        props.setProperty("jenkinsManageMappingIndex",mappingIndex);
         try {
             out = new FileOutputStream(propertiesFile);
             BufferedWriter writer = new BufferedWriter(new FileWriter(propertiesFile.getPath(), false));
@@ -194,6 +281,57 @@ public class ElasticJenkinsUtil {
         return JsonPath.parse(jsonResponse).read("$.hits.hits[0]._id").toString();
     }
 
+    public static void createManageIndex() {
+        String uri = url+"/"+jenkinsManageIndexCluster;
+        String uri2 = url+"/"+jenkinsManageIndexMapping;
+        String uriBuilds = url+"/"+jenkinsBuildsIndex;
+        String uriQueues = url+"/"+jenkinsQueuesIndex;
+        String json = "{\n" +
+                "    \"settings\" : {\n" +
+                "        \"index\" : {\n" +
+                "            \"number_of_shards\" : 3, \n" +
+                "            \"number_of_replicas\" : 2 \n" +
+                "        }\n" +
+                "    }\n" +
+                "}";
+        ElasticJenkinsUtil.elasticPut(uri,json);
+        ElasticJenkinsUtil.elasticPut(uri2,json);
+        ElasticJenkinsUtil.elasticPut(uriBuilds,json);
+        ElasticJenkinsUtil.elasticPut(uriQueues,json);
+    }
+
+    public static boolean isInitialized() {
+        if(url == null || jenkinsBuildsIndex == null || jenkinsQueuesIndex == null
+              || jenkinsManageIndexCluster == null || jenkinsManageIndexMapping == null
+                || clusterName == null || masterName == null || charset == null)
+            return false;
+
+        List<String> list = new ArrayList<>();
+        list.add(jenkinsBuildsIndex);
+        list.add(jenkinsQueuesIndex);
+        list.add(jenkinsManageIndexCluster);
+        list.add(jenkinsManageIndexMapping);
+        for(String index : list) {
+            if(elasticHead(url+"/"+index) != 200)
+                return false;
+        }
+        return true;
+    }
+
+    public static boolean isEmpty() {
+        if(url == null)
+            return true;
+        List<String> list = new ArrayList<>();
+        list.add(jenkinsBuildsIndex+"/_mapping/builds");
+        list.add(jenkinsQueuesIndex+"/_mapping/queues");
+        list.add(jenkinsManageIndexCluster+"/_mapping/clusters");
+        list.add(jenkinsManageIndexMapping+"/_mapping/mapping");
+        for(String type : list) {
+            if(elasticHead(url+"/"+type) != 200)
+                return true;
+        }
+        return false;
+    }
 
     /**
      * Send POST resquest to Elasticsearch
@@ -313,6 +451,21 @@ public class ElasticJenkinsUtil {
         return result;
     }
 
+    public static Integer elasticHead(String uri) {
+        Integer code = 666;
+        HttpHead httpHead = new HttpHead(uri);
+        HttpClientBuilder builder = HttpClientBuilder.create();
+        CloseableHttpClient client = builder.build();
+        try {
+            CloseableHttpResponse response = client.execute(httpHead);
+            return response.getStatusLine().getStatusCode();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return code;
+    }
+
     public static String getHostname() {
         String master = null;
         try {
@@ -351,7 +504,7 @@ public class ElasticJenkinsUtil {
     }
 
     public static Integer getCountCurrentBuilds(String masters) {
-        String uri = url+"/jenkins_builds/builds/_count";
+        String uri = url+"/"+jenkinsBuildsIndex+"/builds/_count";
         //First we check if the hash has been already saved
         String jsonReq = "{ \"query\" : { \n" +
                 " \"bool\" : {\n" +
@@ -369,7 +522,7 @@ public class ElasticJenkinsUtil {
     }
 
     public static Integer getCountCurrentItem(String masters) {
-        String uri = url+"/jenkins_queues/queues/_count";
+        String uri = url+"/"+jenkinsQueuesIndex+"/queues/_count";
         //First we check if the hash has been already saved
         String jsonReq = "{ \"query\" : { \n" +
                 " \"bool\" : {\n" +

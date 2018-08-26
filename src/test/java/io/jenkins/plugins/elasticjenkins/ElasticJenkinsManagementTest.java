@@ -25,6 +25,9 @@ public class ElasticJenkinsManagementTest {
     public static String master = "MASTERNAME";
     public static String clusterName = "CLUSTERNAME";
     public static String hostname = "MYHOST";
+    private static String indexLog = "jenkins_logs";
+    public String buildsIndex = "jenkins_builds";
+    public String queueIndex = "jenkins_queues";
     public static String jenkinsManageIndexCluster = "jenkins_manage_clusters";
     public static String jenkinsManageIndexMapping = "jenkins_manage_mapping";
     public static String jenkinsManageType = "clusters";
@@ -44,7 +47,7 @@ public class ElasticJenkinsManagementTest {
     @Test
     public void testDoConfigure() throws IllegalAccessException, NoSuchFieldException, IOException, InterruptedException {
         ElasticJenkinsManagement elasticJenkinsManagement = new ElasticJenkinsManagement();
-        HttpResponse responseOK = elasticJenkinsManagement.doConfigure(master,url,"UTF-16",clusterName,"jenkins_logs",false);
+        HttpResponse responseOK = elasticJenkinsManagement.doConfigure(master,url,"UTF-8",clusterName,indexLog,buildsIndex,queueIndex,false,jenkinsManageIndexCluster,jenkinsManageIndexMapping);
         //Check response
         Field statusCodeField = responseOK.getClass().getDeclaredField("statusCode");
         statusCodeField.setAccessible(true);

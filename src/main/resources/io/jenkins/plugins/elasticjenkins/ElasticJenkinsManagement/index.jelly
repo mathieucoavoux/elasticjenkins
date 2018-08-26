@@ -38,6 +38,11 @@
       		<strong>Success</strong> Settings have been saved successfully
       	</div>
     </j:if>
+    <j:if test="${request.hasParameter('success')}">
+        <div class="notification notification-success">
+            <strong>Success</strong> Settings have been saved successfully
+        </div>
+    </j:if>
     <j:if test="${request.hasParameter('error')}">
       	<div class="notification notification-danger">
       		<strong>Error</strong> Settings can not be saved. Please check log.
@@ -58,6 +63,14 @@
             <j:set var="charset" value="${it.getJenkinsCharset()}" />
 
             <j:set var="logIndex" value="${it.getLogIndex()}" />
+
+            <j:set var="jenkinsBuilds" value="${it.getJenkinsBuilds()}" />
+
+            <j:set var="jenkinsQueues" value="${it.getJenkinsQueues()}" />
+
+            <j:set var="jenkinsClusterIndex" value="${it.getJenkinsClusterIndex()}" />
+
+            <j:set var="jenkinsManageIndex" value="${it.getJenkinsManageIndex()}" />
 
         	<f:entry title="Jenkins master name:" class="form-check-label">
     			<f:textbox name="masterName" class="form-input" default="${masterName}"/>
@@ -80,7 +93,21 @@
                 <f:textbox name="jenkinsLogs" class="form-input" default="${logIndex}"/>
             </f:entry>
 
+            <f:entry title="Index name of the builds:" class="form-check-label">
+                <f:textbox name="jenkinsBuilds" class="form-input" default="${jenkinsBuilds}"/>
+            </f:entry>
 
+            <f:entry title="Index name of the queues:" class="form-check-label">
+                <f:textbox name="jenkinsQueues" class="form-input" default="${jenkinsQueues}"/>
+            </f:entry>
+
+            <f:entry title="Index name of the clusters configuration:" class="form-check-label">
+                <f:textbox name="jenkinsClusterIndex" class="form-input" default="${jenkinsClusterIndex}"/>
+            </f:entry>
+
+            <f:entry title="Index name of the mapping configuration:" class="form-check-label">
+                <f:textbox name="jenkinsManageIndex" class="form-input" default="${jenkinsManageIndex}"/>
+            </f:entry>
 
         	<f:entry title="">
           		<f:submit value="Save" />

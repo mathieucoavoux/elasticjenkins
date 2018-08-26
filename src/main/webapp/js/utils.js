@@ -1,47 +1,51 @@
-function addContent(json,location) {
-    var array = JSON.parse(json);
+function addContent(json_history,location) {
+    alert(json_history);
+    var array_history = JSON.parse(json_history);
     var table = document.getElementById("result_tbody");
-    for(i=0;i<array.length;i++) {
+    for(i=0;i<array_history.length;i++) {
 
         var tr = document.createElement("tr");
 
         var tdCheck = document.createElement("td");
-        var check = "<input name=\"chk-id\" id=\"chk-"+array[i].id+"\" type=\"checkbox\" value=\""+array[i].jenkinsMasterName+","+array[i].name+","+array[i].id+"\"/>";
+        var check = "<input name=\"chk-id\" id=\"chk-"+array_history[i].id+"\" type=\"checkbox\" value=\""+array_history[i].jenkinsMasterName+","+array_history[i].name+","+array_history[i].id+"\"/>";
         tdCheck.innerHTML = check;
 
         var tdId = document.createElement("td");
-        var id = document.createTextNode(array[i].id);
+        var id = document.createTextNode(array_history[i].id);
         tdId.appendChild(id);
 
         var tdName = document.createElement("td");
-        var name = document.createTextNode(array[i].name);
+        var name = document.createTextNode(array_history[i].name);
         tdName.appendChild(name);
 
         var tdStatus = document.createElement("td");
-        var status = document.createTextNode(array[i].status);
+        var status = document.createTextNode(array_history[i].status);
         tdStatus.appendChild(status);
 
         //Loop for all parameters
         var myParameters = "";
-        for(indParam=0;indParam<array[i].parameters.length;indParam++) {
-            myParameters = "<pre>"+myParameters + array[i].parameters[indParam].name+" : "+myParameters + array[i].parameters[indParam].value+"<pre>"
+        if(typeof array_history[i].parameters != 'undefined') {
+            for(indParam=0;indParam<array_history[i].parameters.length;indParam++) {
+                myParameters = "<pre>"+myParameters + array_history[i].parameters[indParam].name+" : "+myParameters + array_history[i].parameters[indParam].value+"<pre>"
+            }
+            var tdParameters = document.createElement("td");
+            tdParameters.innerHTML = myParameters;
         }
-        var tdParameters = document.createElement("td");
-        tdParameters.innerHTML = myParameters;
-
         var tdMaster = document.createElement("td");
-        var master = document.createTextNode(array[i].jenkinsMasterName);
+        var master = document.createTextNode(array_history[i].jenkinsMasterName);
         tdMaster.appendChild(master);
 
         var tdExecutedOn = document.createElement("td");
-        var executedOn = document.createTextNode(array[i].executedOn);
+        var executedOn = document.createTextNode(array_history[i].executedOn);
         tdExecutedOn.appendChild(executedOn);
 
         tr.appendChild(tdCheck);
         tr.appendChild(tdId);
         tr.appendChild(tdName);
         tr.appendChild(tdStatus);
-        tr.appendChild(tdParameters);
+        if(typeof array_history[i].parameters != 'undefined') {
+            tr.appendChild(tdParameters);
+        }
         tr.appendChild(tdMaster);
         tr.appendChild(tdExecutedOn);
         if(location == "after") {
@@ -53,27 +57,46 @@ function addContent(json,location) {
     }
 }
 
-function addContentSpan(json) {
-}
 
-function addContentPanel(json,panel_name) {
+function addContentPanel(json,name_type) {
 
     var array = JSON.parse(json);
+     var panel_name = "tbody_"+name_type+"_id";
+    var divNoResult = document.getElementById("div_"+name_type+"_no_result");
+    var divContent = document.getElementById(panel_name);
+
+    if(array.length == 0) {
+        divNoResult.style.display = "block";
+        divContent.style.display = "none";
+        return;
+    }
+    divNoResult.style.display = "none";
+    divContent.style.display = "block";
 
     var new_tbody = document.createElement("tbody");
-    new_tbody.setAttribute("name",panel_name);
-    new_tbody.setAttribute("id",panel_name);
+        new_tbody.setAttribute("name",panel_name);
+        new_tbody.setAttribute("id",panel_name);
+
+    var trHeader = document.createElement("tr");
+    var thId = document.createElement("th");
+    var hId = '<th class="pane" colspan="1">N.</th>'
+    thId.innerHTML = hId;
+    var thName = document.createElement("th");
+    var hName = '<th class="pane" colspan="1">Name</th>'
+    thName.innerHTML = hName;
+    var thMaster = document.createElement("th");
+    var hMaster = '<th class="pane" colspan="1">Master</th>'
+    thMaster.innerHTML = hMaster;
+    trHeader.appendChild(thId);
+    trHeader.appendChild(thName);
+    trHeader.appendChild(thMaster);
+    new_tbody.appendChild(trHeader);
     for(i=0;i<array.length;i++) {
         var tr = document.createElement("tr");
 
-        var tdIcon = document.createElement("td");
-        if(panel_name == "tbody_build_id") {
-            var icon_name = "blue_anime.gif";
-        }else{
-            var icon_name = "grey.png";
-        }
-        var icon = "<img src=\"images/24x24/"+icon_name+"\"></img>";
-        tdIcon.innerHTML = icon;
+        var tdId = document.createElement("td");
+        var id = document.createTextNode(array[i].id);
+        tdId.appendChild(id);
 
         var tdName = document.createElement("td");
         var name = document.createTextNode(array[i].name);
@@ -83,7 +106,7 @@ function addContentPanel(json,panel_name) {
         var master = document.createTextNode(array[i].jenkinsMasterName);
         tdMaster.appendChild(master);
 
-        tr.appendChild(tdIcon);
+        tr.appendChild(tdId);
         tr.appendChild(tdName);
         tr.appendChild(tdMaster);
         new_tbody.appendChild(tr);

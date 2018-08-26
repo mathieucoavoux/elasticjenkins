@@ -41,6 +41,10 @@ public class ElasticJenkinsActionTest {
     public String uniqueId = "20170428";
     public String title = "PROJECT_NAME";
     public String logIndex = "jenkins_logs";
+    public String buildsIndex = "jenkins_builds";
+    public String queueIndex = "jenkins_queues";
+    public String clusterIndex = "jenkins_manage_clusters";
+    public String mappingIndex = "jenkins_manage_mapping";
 
     public static String url = "http://localhost:9200";
 
@@ -115,12 +119,12 @@ public class ElasticJenkinsActionTest {
     @Before
     public void setUp() throws IOException, InterruptedException {
         //ElasticJenkinsUtil.writeProperties(master,url,"UTF-16",logIndex);
-        ElasticJenkinsUtil.writeProperties(master,clusterName , url,"UTF-8",logIndex );
+        ElasticJenkinsUtil.writeProperties(master,clusterName , url,"UTF-8",logIndex,buildsIndex,queueIndex,clusterIndex,mappingIndex );
     }
 
     @Test
     public void allTest() {
-        testGetBuildByParameters();
+        //testGetBuildByParameters();
     }
 
     public void testGetBuildByParameters() {

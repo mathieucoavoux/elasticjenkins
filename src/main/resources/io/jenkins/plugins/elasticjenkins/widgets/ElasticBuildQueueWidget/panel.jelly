@@ -37,7 +37,7 @@ THE SOFTWARE.
                 var ebqw = <st:bind value="${it}" />;
                 ebqw.getLastQueuedItemsJson(function(q) {
                    queue_json_response = q.responseObject();
-                    addContentPanel(queue_json_response,"tbody_queue_id");
+                    addContentPanel(queue_json_response,"queue");
                 });
                 var span_queue = document.getElementById("span_count_queue");
                 ebqw.getItemCount(function(ic) {
@@ -52,25 +52,36 @@ THE SOFTWARE.
         </colgroup>
         <colgroup><col width="30"/><col width="200*"/><col width="24"/></colgroup>
         <j:if test="${it.getItemCount() == 0}">
-            <tr>
-                <td class="pane" colspan="3">
-                    No build in the queue
-                </td>
-            </tr>
+            <tbody id="div_queue_no_result">
+                <tr>
+                    <td class="pane" colspan="3">
+                        No build in the queue
+                    </td>
+                </tr>
+            </tbody>
+            <tbody id="tbody_queue_id">
+            </tbody>
         </j:if>
         <j:if test="${it.getItemCount() != 0}">
-            <tr>
-                <th class="pane" colspan="1">
-                    S.
-                </th>
-                <th class="pane" colspan="1">
-                    Name
-                </th>
-                <th class="pane" colspan="1">
-                    Master
-                </th>
-            </tr>
+            <tbody id="div_queue_no_result" style="display:none">
+                <tr>
+                    <td class="pane" colspan="3">
+                        No build in the queue
+                    </td>
+                </tr>
+            </tbody>
             <tbody id="tbody_queue_id">
+                <tr>
+                    <th class="pane" colspan="1">
+                        S.
+                    </th>
+                    <th class="pane" colspan="1">
+                        Name
+                    </th>
+                    <th class="pane" colspan="1">
+                        Master
+                    </th>
+                </tr>
                 <j:forEach var="item" items="${it.getLastQueuedItems()}">
                     <tr>
                         <td class="pane" colspan="1">
