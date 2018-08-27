@@ -17,6 +17,7 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static junit.framework.TestCase.assertEquals;
@@ -204,7 +205,7 @@ public class ElasticManagerTest  {
             writer.append(row);
         writer.close();
         PowerMockito.when(build.getLogFile()).thenReturn(file);
-        String idUpdated = em.updateBuild("jenkins_builds",type,build,idElastic,"COMPLETED",logs);
+        String idUpdated = em.updateBuild("jenkins_builds",type,build,idElastic,"COMPLETED",file);
         assertEquals("1_"+index+"_"+master,idUpdated);
         String idLog = em.searchById(index,type,idUpdated).getLogId();
         assertTrue(idLog != null);
@@ -230,24 +231,25 @@ public class ElasticManagerTest  {
 
         if(file.exists()) file.delete();
 
-        logs.add("[[ \"test\" == \"${TEST}\" ]] && echo 'OK';\n");
-        logs.add("#Javascript\n");
+        logs.add("[[ \"test\" == \"test\" ]] && echo OK;");
+        logs.add("#Javascript");
         logs.add("if('OK' == 'OK'){alert('OK');}");
         BufferedWriter writer = new BufferedWriter(new FileWriter(file.getPath(),true));
         for(String row : logs) {
-            writer.append(row);
+            writer.append(row+"\n");
         }
         writer.flush();
         writer.close();
         PowerMockito.when(build.getLogFile()).thenReturn(file);
-        String idUpdated = em.updateBuild("jenkins_builds",type,build,idElastic,"COMPLETED",logs);
+        String idUpdated = em.updateBuild("jenkins_builds",type,build,idElastic,"COMPLETED",file);
         assertEquals(idElastic,idUpdated);
         GenericBuild genericBuild = em.searchById(index,type,idElastic);
         String idLog = genericBuild.getLogId();
         assertTrue(idLog != null);
         List<String> outputList = em.getLogOutput(URLDecoder.decode(idLog,"UTF-8"));
         for(int ind=0;ind<outputList.size();ind++) {
-            assertEquals(URLDecoder.decode(outputList.get(ind),"UTF-8"),logs.get(ind));
+            String lineElastic =URLDecoder.decode(outputList.get(ind),"UTF-8");
+            assertEquals(logs.get(ind),lineElastic);
         }
 
         deleteTest(logIndex,idLog);

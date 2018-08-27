@@ -12,8 +12,7 @@
         <l:main-panel>
 
             <script src="${rootURL}/plugin/elasticjenkins/js/utils.js"></script>
-                        <script src="${rootURL}/plugin/elasticjenkins/js/highlight.pack.js"></script>
-                                <script>hljs.initHighlightingOnLoad();</script>
+
             <script type="text/javascript">
                     var number = 0;
                     var last_fetch = new Date().getTime();
@@ -137,6 +136,7 @@
                             <td><a href="getLog?id=${bid}_${projectId}_${masterId}"><img src="${rootURL}/plugin/elasticjenkins/36x36/log_icon.png" ></img></a></td>
                         </tr>
                     </j:forEach>
+
                 </tbody>
                 </table>
             </div>
@@ -147,17 +147,6 @@
             </div>
         </div>
 
-        <div>
-            <j:out value="${h.generateConsoleAnnotationScriptAndStylesheet()}"/>
-            <j:choose>
-            <pre class="console-output">
-                        			<st:getOutput var="output" />
-                        			<code>
-                        			<j:whitespace>${it.writeOutput(output)}</j:whitespace>
-                        			</code>
-                      			</pre>
-                      			</j:choose>
-        </div>
         </l:main-panel>
     </l:layout>
 </j:jelly>

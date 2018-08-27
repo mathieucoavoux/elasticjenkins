@@ -14,8 +14,7 @@ import io.jenkins.plugins.elasticjenkins.entity.Parameters;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
@@ -113,27 +112,29 @@ public class ElasticManager {
     public String updateBuild(@Nonnull String index, @Nonnull String type,
                               @Nonnull Run<?,?> build, @Nonnull String id,
                               @Nonnull String status,
-                              @Nullable List<String> logs) {
+                              @Nullable File file) {
         String elasticSearchId = "";
         String indexLogs = ElasticJenkinsUtil.getProperty("jenkins_logs");
 
         List<String> update = new ArrayList<>();
-       // try {
+        try {
 
             //List<String> list = Files.readAllLines(build.getLogFile().toPath());
-
-            for(String oneLine : logs) {
+            BufferedReader br = new BufferedReader(new FileReader(file.getPath()));
+            String oneLine;
+            while((oneLine = br.readLine()) != null) {
+            //for(String oneLine : logs) {
                 //update.add(URLEncoder.encode(oneLine,charset));
                 update.add(oneLine);
             }
             //genericBuild.setLogId(update);
 
-        //} catch (IOException e) {
-        //    LOGGER.log(Level.SEVERE,"An unexpected response was received:",e);
-        //}
+        } catch (IOException e) {
+            LOGGER.log(Level.SEVERE,"An unexpected response was received:",e);
+        }
 
         String suffix = "";
-        if (logs != null ) {
+        if (update.size() > 0 ) {
             String typeLog = new SimpleDateFormat("yyyy_MM").format(new Date());
             String logId = null;
             String uriLogs = url + "/" + indexLogs + "/" + typeLog+"/";

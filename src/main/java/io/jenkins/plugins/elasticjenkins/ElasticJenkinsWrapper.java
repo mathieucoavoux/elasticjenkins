@@ -100,10 +100,10 @@ public class ElasticJenkinsWrapper extends SimpleBuildWrapper {
 					}
 
 				}
-				Stream<String> stream = Files.lines(build.getLogFile().toPath());
+				//Stream<String> stream = Files.lines(build.getLogFile().toPath());
 
 				//id = em.updateBuild("jenkins_builds","builds",build,id,status,build.getLog(maxLines));
-				id = em.updateBuild("jenkins_builds","builds",build,id,status,stream.collect(Collectors.toList()));
+				id = em.updateBuild("jenkins_builds","builds",build,id,status,build.getLogFile());
             }
         }
     }
