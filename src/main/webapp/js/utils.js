@@ -1,5 +1,5 @@
 function addContent(json_history,location) {
-    //alert(json_history);
+
     var array_history = JSON.parse(json_history);
     var table = document.getElementById("result_tbody");
     for(i=0;i<array_history.length;i++) {
@@ -59,7 +59,6 @@ function addContent(json_history,location) {
 
 
 function addContentPanel(json,name_type) {
-
     var array = JSON.parse(json);
      var panel_name = "tbody_"+name_type+"_id";
     var divNoResult = document.getElementById("div_"+name_type+"_no_result");
