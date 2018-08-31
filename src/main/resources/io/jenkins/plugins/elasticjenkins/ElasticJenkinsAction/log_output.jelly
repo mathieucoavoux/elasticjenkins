@@ -12,7 +12,7 @@
         <l:main-panel>
 
             <script src="${rootURL}/plugin/elasticjenkins/js/utils.js"></script>
-                        <script src="${rootURL}/plugin/elasticjenkins/js/highlight.pack.js"></script>
+                       <!-- <script src="${rootURL}/plugin/elasticjenkins/js/highlight.pack.js"></script> -->
                                 <script>hljs.initHighlightingOnLoad();</script>
         <h1>${it.displayName}</h1>
         <h2>Get log output</h2>
@@ -22,7 +22,8 @@
                     <pre class="console-output">
                                 			<st:getOutput var="output" />
                                 			<code>
-                                			<j:whitespace>${it.writeOutput(output,request.getParameter('id'))}</j:whitespace>
+                                			<!-- <j:whitespace>${it.writeOutput(output,request.getParameter('id'))}</j:whitespace> -->
+                                                <j:whitespace>${it.writeLogTo(output)}</j:whitespace>
                                 			</code>
                               			</pre>
                               			</j:choose>

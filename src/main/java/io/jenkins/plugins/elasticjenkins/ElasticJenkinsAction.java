@@ -2,21 +2,25 @@ package io.jenkins.plugins.elasticjenkins;
 
 
 import com.google.gson.Gson;
+import hudson.console.AnnotatedLargeText;
 import hudson.model.AbstractProject;
 import hudson.model.Action;
 import io.jenkins.plugins.elasticjenkins.entity.GenericBuild;
 import io.jenkins.plugins.elasticjenkins.util.ElasticJenkinsUtil;
 import io.jenkins.plugins.elasticjenkins.util.ElasticLogHandler;
 import io.jenkins.plugins.elasticjenkins.util.ElasticManager;
+import jenkins.model.Jenkins;
 import org.apache.commons.jelly.XMLOutput;
 import org.apache.http.HttpRequest;
 import org.kohsuke.stapler.HttpResponse;
 import org.kohsuke.stapler.HttpResponses;
 import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.StaplerResponse;
 import org.kohsuke.stapler.bind.JavaScriptMethod;
 import org.xml.sax.SAXException;
 
 import javax.annotation.Nonnull;
+import java.io.File;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
@@ -114,6 +118,19 @@ public class ElasticJenkinsAction implements Action {
 
         out.flush();
 
+    }
+
+    public void doProgressiveHtml(StaplerRequest req, StaplerResponse rsp) throws IOException {
+
+        ElasticManager elasticManager = new ElasticManager();
+        AnnotatedLargeText text = elasticManager.getLog();
+        rsp.addHeader("X-More-Data","true");
+        text.doProgressiveHtml(req,rsp);
+
+    }
+
+    public void writeLogTo(XMLOutput out) throws IOException {
+        new AnnotatedLargeText<GenericBuild>(new File(Jenkins.getInstance().getRootDir(),"/myfile.txt"),Charset.defaultCharset(),true,new GenericBuild()).writeLogTo(0,out.asWriter());
     }
 
     public HttpResponse doGetLog(StaplerRequest request) {

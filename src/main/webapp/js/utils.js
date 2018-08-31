@@ -1,5 +1,5 @@
 function addContent(json_history,location) {
-    //alert(json_history);
+
     var array_history = JSON.parse(json_history);
     var table = document.getElementById("result_tbody");
     for(i=0;i<array_history.length;i++) {
@@ -66,7 +66,7 @@ function addContentPanel(json,name_type) {
     var divContent = document.getElementById(panel_name);
 
     if(array.length == 0) {
-        divNoResult.style.display = "block";
+        divNoResult.removeAttribute("style");
         divContent.style.display = "none";
         return;
     }

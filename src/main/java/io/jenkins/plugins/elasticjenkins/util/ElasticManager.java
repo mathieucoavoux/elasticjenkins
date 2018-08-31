@@ -4,18 +4,21 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import com.jayway.jsonpath.JsonPath;
+import hudson.console.AnnotatedLargeText;
 import hudson.model.*;
 import io.jenkins.plugins.elasticjenkins.ElasticJenkins;
 import io.jenkins.plugins.elasticjenkins.entity.ElasticMaster;
 import io.jenkins.plugins.elasticjenkins.entity.ElasticsearchResult;
 import io.jenkins.plugins.elasticjenkins.entity.GenericBuild;
 import io.jenkins.plugins.elasticjenkins.entity.Parameters;
+import jenkins.model.Jenkins;
 
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.*;
 import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -279,6 +282,12 @@ public class ElasticManager {
         String uri = url+"/"+indexLogs+"/"+suffix+"/_source";
         return gson.fromJson(JsonPath.parse(ElasticJenkinsUtil.elasticGet(uri)).read("$.logs").toString(),List.class);
     }
+
+    public AnnotatedLargeText getLog() {
+        return new AnnotatedLargeText<GenericBuild>(new File(Jenkins.getInstance().getRootDir(),"/myfile.txt"),Charset.defaultCharset(),true,new GenericBuild());
+    }
+
+
 
     public List<ElasticMaster> getMasterByNameAndCluster(@Nonnull String masterName,
                                                          @Nonnull String clusterName) {

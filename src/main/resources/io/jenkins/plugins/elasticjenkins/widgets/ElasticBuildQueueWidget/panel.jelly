@@ -85,7 +85,7 @@ THE SOFTWARE.
                 <j:forEach var="item" items="${it.getLastQueuedItems()}">
                     <tr>
                         <td class="pane" colspan="1">
-                            <img src="images/24x24/grey.png"></img>
+                            ${item.getId()}
                         </td>
                         <td class="pane" colspan="1">
                             ${item.getName()}
