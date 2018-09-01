@@ -65,7 +65,7 @@ function addContentPanel(json,name_type) {
     var divContent = document.getElementById(panel_name);
 
     if(array.length == 0) {
-        divNoResult.style.display = "block";
+        divNoResult.removeAttribute("style");
         divContent.style.display = "none";
         return;
     }

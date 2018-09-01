@@ -6,10 +6,12 @@ import hudson.console.AnnotatedLargeText;
 import hudson.console.ConsoleAnnotator;
 import hudson.model.AbstractProject;
 import io.jenkins.plugins.elasticjenkins.util.ElasticLogHandler;
+import jenkins.model.Jenkins;
 import org.apache.commons.jelly.XMLOutput;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -210,4 +212,8 @@ public class GenericBuild {
         this.executedOn = executedOn;
     }
 
+
+    public void writeLogTo(XMLOutput out) throws IOException {
+        new AnnotatedLargeText<GenericBuild>(new File(Jenkins.getInstance().getRootDir(),"/myfile.txt"),Charset.defaultCharset(),true,this).writeLogTo(0,out.asWriter());
+    }
 }
