@@ -85,11 +85,7 @@ THE SOFTWARE.
                 <j:forEach var="queue_item" items="${it.getLastQueuedItems()}">
                     <tr>
                         <td class="pane" colspan="1">
-<<<<<<< HEAD
                             ${queue_item.getId()}
-=======
-                            ${item.getId()}
->>>>>>> d78f3f413145430b38d20a24ef2a41c103990738
                         </td>
                         <td class="pane" colspan="1">
                             ${queue_item.getName()}
