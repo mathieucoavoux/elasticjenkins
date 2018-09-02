@@ -2,14 +2,21 @@ package io.jenkins.plugins.elasticjenkins;
 
 
 import com.google.gson.Gson;
+import com.thoughtworks.xstream.annotations.XStreamOmitField;
+import hudson.XmlFile;
 import hudson.console.AnnotatedLargeText;
+import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.Action;
+import hudson.model.Run;
+import hudson.slaves.ComputerLauncher;
+import hudson.util.XStream2;
 import io.jenkins.plugins.elasticjenkins.entity.GenericBuild;
 import io.jenkins.plugins.elasticjenkins.util.ElasticJenkinsUtil;
 import io.jenkins.plugins.elasticjenkins.util.ElasticLogHandler;
 import io.jenkins.plugins.elasticjenkins.util.ElasticManager;
 import jenkins.model.Jenkins;
+import jenkins.model.RunAction2;
 import org.apache.commons.jelly.XMLOutput;
 import org.apache.http.HttpRequest;
 import org.kohsuke.stapler.HttpResponse;
@@ -28,12 +35,14 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class ElasticJenkinsAction implements Action {
+public class ElasticJenkinsAction extends ComputerLauncher implements RunAction2 {
     private AbstractProject<?,?> project;
 
     private static final Logger LOGGER = Logger.getLogger(ElasticJenkinsAction.class.getName());
 
 
+    @XStreamOmitField
+    protected AbstractBuild<?,?> build;
 
     ElasticJenkinsAction(AbstractProject<?,?> project) {
         this.project = project;
@@ -56,6 +65,15 @@ public class ElasticJenkinsAction implements Action {
     }
 
 
+    @Override
+    public void onAttached(Run<?,?> r) {
+        build = (AbstractBuild<?,?>) r;
+    }
+
+    @Override
+    public void onLoad(Run<?, ?> r) {
+        build = (AbstractBuild<?,?>) r;
+    }
 
     @JavaScriptMethod
     public List<GenericBuild> getPaginatedHistory(@Nonnull String type,
@@ -130,7 +148,11 @@ public class ElasticJenkinsAction implements Action {
     }
 
     public void writeLogTo(XMLOutput out) throws IOException {
-        new AnnotatedLargeText<GenericBuild>(new File(Jenkins.getInstance().getRootDir(),"/myfile.txt"),Charset.defaultCharset(),true,new GenericBuild()).writeLogTo(0,out.asWriter());
+
+        Run<?,?> myBuild = (Run<?, ?>) new XStream2().fromXML(new File(Jenkins.getInstance().getRootDir(),"/test_build.xml"));
+        //LOGGER.log(Level.INFO,"Root dir:"+myBuild.getRootDir());
+        new AnnotatedLargeText<GenericBuild>(new File(Jenkins.getInstance().getRootDir(),"/myfile.txt"),Charset.defaultCharset(),true,new GenericBuild()).writeHtmlTo(0,out.asWriter());
+
     }
 
     public HttpResponse doGetLog(StaplerRequest request) {

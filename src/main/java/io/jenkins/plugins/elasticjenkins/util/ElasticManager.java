@@ -4,8 +4,10 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import com.jayway.jsonpath.JsonPath;
+import hudson.XmlFile;
 import hudson.console.AnnotatedLargeText;
 import hudson.model.*;
+import hudson.util.XStream2;
 import io.jenkins.plugins.elasticjenkins.ElasticJenkins;
 import io.jenkins.plugins.elasticjenkins.entity.ElasticMaster;
 import io.jenkins.plugins.elasticjenkins.entity.ElasticsearchResult;
@@ -96,6 +98,18 @@ public class ElasticManager {
         genericBuild.setStatus("EXECUTING");
         //Convert the generic build to a Json string
         String json = gson.toJson(genericBuild);
+
+
+        LOGGER.log(Level.INFO,"build serialized:"+gson.toJson(build));
+        LOGGER.log(Level.INFO,"JOBT serialized:"+gson.toJson(build.getParent()));
+        LOGGER.log(Level.INFO,"Get badges serialized:"+gson.toJson(build.getBadgeActions()));
+
+         XmlFile myFile = new XmlFile(new XStream2(),new File(Jenkins.getInstance().getRootDir(),"/test_build.xml"));
+        try {
+            myFile.write(build);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         //Post the json to Elasticsearch
         String eId = build.getId()+"_"+projectId+"_"+ElasticJenkinsUtil.getCurentMasterId();
@@ -580,6 +594,11 @@ public class ElasticManager {
         }
 
         return listBuilds;
+    }
+
+    public  GenericBuild getGenericBuild(String id) {
+        String uri = url+"/"+jenkinsBuildsIndex+"/builds/"+id+"/_source";
+        return gson.fromJson(ElasticJenkinsUtil.elasticGet(uri),GenericBuild.class);
     }
 
     public Integer getCountCurrentBuilds() {
