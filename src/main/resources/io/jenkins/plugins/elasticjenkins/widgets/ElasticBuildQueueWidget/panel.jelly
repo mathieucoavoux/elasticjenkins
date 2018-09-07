@@ -82,16 +82,16 @@ THE SOFTWARE.
                         Master
                     </th>
                 </tr>
-                <j:forEach var="item" items="${it.getLastQueuedItems()}">
+                <j:forEach var="queue_item" items="${it.getLastQueuedItems()}">
                     <tr>
                         <td class="pane" colspan="1">
-                            ${item.getId()}
+                            ${queue_item.getId()}
                         </td>
                         <td class="pane" colspan="1">
-                            ${item.getName()}
+                            ${queue_item.getName()}
                         </td>
                         <td class="pane" colspan="1">
-                            ${item.getJenkinsMasterName()}
+                            ${queue_item.getJenkinsMasterName()}
                         </td>
                     </tr>
                 </j:forEach>

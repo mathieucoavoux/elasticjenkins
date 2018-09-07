@@ -1,7 +1,7 @@
 # ElasticJenkins plugin
 
 ## Disclaimer
-Copyright (c) 2018, ComprehensiveIT®, Mathieu COAVOUX
+Copyright (c) 2018, Mathieu COAVOUX
 
 Permission to use, copy, modify, and/or distribute this software for
 any purpose with or without fee is hereby granted,
@@ -92,6 +92,57 @@ Below the information stored in Elasticsearch
 
 ![simple-architecture](doc/elasticjenkins_model.png)
 
+## Installation
+
+Since this plugin is under development you may install it by downloading the source code and compiling it.
+You can compile with the command :
+```
+mvn package
+```
+
+Or if you don't have Elasticsearch install on the server where you are compiling the source code or you want to skip the tests:
+
+```
+mvn -DskipTests -Dmaven.test.skip=true package
+```
+
+Once the plugin compiled, a HPI file must be available under the target.
+Boot your Jenkins. Then click on Manage / Manage Plugins / Advanced tab
+Then choose the HPI file in the Upload plugin section.
+After the plugin installation configure the plugin
 ## Configuration
 
+Under the manage console click on *Elasticjenkins management* 
+Then fill the form:
+![simple-architecture](doc/configuration.PNG)
+
+* Jenkins master name: this is used to identify the server where the build has been launched
+* Jenkins cluster name: this is used to display all builds launched in the same cluster
+* Persistence store: this is the URL of Elasticsearch. Example: http://localhost:9200
+* Index name of the log: this is used to create an index which contains the log
+* Index name of the builds: this is used to create an index which contains the builds
+* Index name of the queues: this is used to create an index which contains the items in queues
+* Index name of the clusters configuration: this is used to create an index which contains the clusters configuration
+* Index name of the mapping configuration: this is used to create an index which contains the Jenkins projects configuration
+
+Then press save.
+You must receive an success message:
+![simple-architecture](doc/success.png)
+
 ## Usage
+
+When you create your Jenkins Job you must select the ElasticBuild box in the Build Environment section:
+![simple-architecture](doc/wrapper.png)
+
+You may notice that an icon appears on the left panel under your project:
+![simple-architecture](doc/sidepanel.png)
+
+Click on it to view the builds history stored into Elasticsearch
+![simple-architecture](doc/builds_history.png)
+
+You can filter the view either to display all builds for the whole cluster or only the current node.
+You can also search for a build based on a parameter 
+
+Finally you can see that two new widgets are available.
+![simple-architecture](doc/widgets.png)
+They display the current items in the queue for the cluster and the current buils.

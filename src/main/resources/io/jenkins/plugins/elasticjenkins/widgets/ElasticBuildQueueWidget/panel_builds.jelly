@@ -82,16 +82,16 @@ THE SOFTWARE.
                         Master
                     </th>
                 </tr>
-                <j:forEach var="item" items="${it.getLastCurrentBuilds()}">
+                <j:forEach var="build_item" items="${it.getLastCurrentBuilds()}">
                     <tr>
                         <td class="pane" colspan="1">
-                            ${item.getId()}
+                            ${build_item.getId()}
                         </td>
                         <td class="pane" colspan="1">
-                            ${item.getName()}
+                            ${build_item.getName()}
                         </td>
                         <td class="pane" colspan="1">
-                            ${item.getJenkinsMasterName()}
+                            ${build_item.getJenkinsMasterName()}
                         </td>
                     </tr>
                 </j:forEach>
