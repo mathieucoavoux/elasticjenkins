@@ -15,9 +15,9 @@ import org.powermock.api.mockito.PowerMockito;
 import java.io.*;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static junit.framework.TestCase.assertEquals;
@@ -157,7 +157,7 @@ public class ElasticManagerTest  {
         searchById();
 
         //Get pagination
-        //testGetPaginateBuildHistory();
+        testGetPaginateBuildHistory();
 
         //Test add project mapping
         //testAddProjectMapping();
@@ -181,7 +181,7 @@ public class ElasticManagerTest  {
         ElasticManager em = new ElasticManager();
         String index = "jenkins_test";
         String type = "builds";
-        String idElastic = em.addBuild(index,type,build);
+        String idElastic = em.addBuild(index,build);
         assertTrue(idElastic.equals("1_"+index+"_"+master));
         deleleTest(index,type,"1_"+index+"_"+master);
     }
@@ -194,7 +194,7 @@ public class ElasticManagerTest  {
         String index = "jenkins_test";
         String type = "builds";
         String fileName = "testUpdate.log";
-        String idElastic = em.addBuild(index,type,build);
+        String idElastic = em.addBuild(index,build);
         List<String> logs = new ArrayList<>();
         logs.add("éer");
         logs.add("Line2");
@@ -205,9 +205,9 @@ public class ElasticManagerTest  {
             writer.append(row);
         writer.close();
         PowerMockito.when(build.getLogFile()).thenReturn(file);
-        String idUpdated = em.updateBuild("jenkins_builds",type,build,idElastic,"COMPLETED",file);
+        String idUpdated = em.updateBuild(idElastic,"COMPLETED",file);
         assertEquals("1_"+index+"_"+master,idUpdated);
-        String idLog = em.searchById(index,type,idUpdated).getLogId();
+        String idLog = em.searchById(idUpdated).getLogId();
         assertTrue(idLog != null);
         deleteTest(logIndex,idLog);
         deleleTest(index,type,"1_"+index+"_"+master);
@@ -222,7 +222,7 @@ public class ElasticManagerTest  {
         String index = "jenkins_test";
         String type = "builds";
         String fileName = "testUpdate2.log";
-        String idElastic = em.addBuild(index,type,build);
+        String idElastic = em.addBuild(index,build);
         assertTrue(idElastic.equals("1_"+index+"_"+master));
 
         List<String> logs = new ArrayList<>();
@@ -241,12 +241,12 @@ public class ElasticManagerTest  {
         writer.flush();
         writer.close();
         PowerMockito.when(build.getLogFile()).thenReturn(file);
-        String idUpdated = em.updateBuild("jenkins_builds",type,build,idElastic,"COMPLETED",file);
+        String idUpdated = em.updateBuild(idElastic,"COMPLETED",file);
         assertEquals(idElastic,idUpdated);
-        GenericBuild genericBuild = em.searchById(index,type,idElastic);
+        GenericBuild genericBuild = em.searchById(idElastic);
         String idLog = genericBuild.getLogId();
         assertTrue(idLog != null);
-        List<String> outputList = em.getLogOutput(URLDecoder.decode(idLog,"UTF-8"));
+        List<String> outputList = Files.readAllLines(em.getLogOutput(URLDecoder.decode(idLog,"UTF-8"),"1").toPath());
         for(int ind=0;ind<outputList.size();ind++) {
             String lineElastic =URLDecoder.decode(outputList.get(ind),"UTF-8");
             assertEquals(logs.get(ind),lineElastic);
@@ -259,18 +259,21 @@ public class ElasticManagerTest  {
 
     public void testGetPaginateBuildHistory() throws IOException, InterruptedException {
         ElasticManager em = new ElasticManager();
-        String index = "jenkins_test";
+
         String type = "builds";
+        Run<?,?> build = generateBuild("1");
+        String hash = ElasticJenkinsUtil.getHash(build.getUrl().split(build.getId())[0]);
+        String projectId = em.addProjectMapping(hash,URLEncoder.encode(build.getUrl().split(build.getId())[0],ElasticJenkinsUtil.getProperty("elasticCharset")));
         for(int i=1;i<10;i++) {
-            em.addBuild(index,type,generateBuild(Integer.toString(i)));
+            em.addBuild(projectId,generateBuild(Integer.toString(i)));
         }
         //Let elasticsearch save the entries correctly
         Thread.sleep(2000);
-        List<GenericBuild> list = em.getPaginateBuildHistory(index,type,"clusters" , 2, "5");
+        List<GenericBuild> list = em.getPaginateBuildHistory(hash, "clusters" , 2, "5");
         assertEquals("4",list.get(0).getId());
         assertEquals("3",list.get(1).getId());
         for(int i=1;i<10;i++) {
-            deleleTest(index,type,Integer.toString(i)+"_"+master);
+            deleleTest("jenkins_builds",type,Integer.toString(i)+"_"+master);
         }
     }
 
@@ -284,7 +287,7 @@ public class ElasticManagerTest  {
 
     public void testFindByParameter() {
         ElasticManager em = new ElasticManager();
-        List<GenericBuild> list = em.findByParameter("44b1edab813647ffecac78d81c4b8d22","builds","MyMaster2","Bonjour2");
+        List<GenericBuild> list = em.findByParameter("44b1edab813647ffecac78d81c4b8d22", "MyMaster2","Bonjour2");
     }
 
 

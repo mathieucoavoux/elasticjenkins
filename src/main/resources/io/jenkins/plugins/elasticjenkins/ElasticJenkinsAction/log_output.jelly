@@ -22,8 +22,8 @@
                     <pre class="console-output">
                                 			<st:getOutput var="output" />
                                 			<code>
-                                			<!-- <j:whitespace>${it.writeOutput(output,request.getParameter('id'))}</j:whitespace> -->
-                                                <j:whitespace>${it.writeLogTo(output)}</j:whitespace>
+                                			 <j:whitespace>${it.writeOutput(output,request.getParameter('id'))}</j:whitespace>
+                                             <!--   <j:whitespace>${it.writeLogTo(output)}</j:whitespace> -->
                                 			</code>
                               			</pre>
                               			</j:choose>
