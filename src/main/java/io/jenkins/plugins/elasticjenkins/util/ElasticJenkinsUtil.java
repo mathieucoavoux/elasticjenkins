@@ -5,6 +5,7 @@ package io.jenkins.plugins.elasticjenkins.util;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.jayway.jsonpath.JsonPath;
+import io.jenkins.plugins.elasticjenkins.entity.GenericBuild;
 import jenkins.model.Jenkins;
 import org.apache.http.client.methods.*;
 import org.apache.http.entity.StringEntity;
@@ -538,6 +539,8 @@ public class ElasticJenkinsUtil {
         return JsonPath.parse(jsonResponse).read("$.count");
 
     }
+
+
 
 
 }

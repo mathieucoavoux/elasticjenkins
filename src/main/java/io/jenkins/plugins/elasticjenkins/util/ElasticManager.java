@@ -1,24 +1,24 @@
 package io.jenkins.plugins.elasticjenkins.util;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import com.jayway.jsonpath.JsonPath;
-import hudson.console.AnnotatedLargeText;
+
 import hudson.model.*;
-import io.jenkins.plugins.elasticjenkins.ElasticJenkins;
+
 import io.jenkins.plugins.elasticjenkins.entity.ElasticMaster;
 import io.jenkins.plugins.elasticjenkins.entity.ElasticsearchResult;
 import io.jenkins.plugins.elasticjenkins.entity.GenericBuild;
 import io.jenkins.plugins.elasticjenkins.entity.Parameters;
 import jenkins.model.Jenkins;
 
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.*;
 import java.net.URLEncoder;
-import java.nio.charset.Charset;
+
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -50,19 +50,24 @@ public class ElasticManager {
 
     protected Gson gson = new GsonBuilder().create();
 
-    public String addBuild(@Nonnull String projectId, @Nonnull String type,
-                           @Nonnull Run<?,?> build) {
+    /**
+     * Add a build to Elasticsearch. The status, log id and completion time is update at the end of the build
+     * We extract required information from the build and store them in a simple object.
+     * This avoid unnecessary information to be stored in Elasticsearch as we serialize this object in JSON.
+     * @param projectId : The Elasticsearch id of the project which is stored in {@link ElasticJenkinsUtil#getJenkinsManageIndexMapping()}
+     * @param build : The build to save
+     * @return: The Elasticsearch id
+     */
+    public String addBuild(@Nonnull String projectId,
+                           @Nonnull Run<?, ?> build) {
         Gson gson = new GsonBuilder().create();
 
         //We set build values in a generic build to avoid to serialize unnecessary values
         GenericBuild genericBuild = new GenericBuild();
         genericBuild.setName(ElasticJenkinsUtil.convertUrlToFullName(build.getUrl()));
         genericBuild.setId(build.getId());
-        //genericBuild.setStartDate(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(build.getStartTimeInMillis())));
-
         genericBuild.setStartDate(System.currentTimeMillis());
 
-        //genericBuild.setParameters(build.getActions(ParametersAction.class));
         List<ParametersAction> parametersActions = build.getActions(ParametersAction.class);
         if(parametersActions.size() > 0) {
             List<Parameters> listParameters = new ArrayList<>();
@@ -112,45 +117,46 @@ public class ElasticManager {
         return elasticSearchId;
     }
 
-    public String updateBuild(@Nonnull String index, @Nonnull String type,
-                              @Nonnull Run<?,?> build, @Nonnull String id,
+    /**
+     * Update the build with the status, log output and completion date.
+     * @param id: Elasticsearch id of the build
+     * @param status: Status of the job
+     * @param file: Log file where is store the output
+     * @return: the Elasticsearch id
+     */
+    public String updateBuild(@Nonnull String id,
                               @Nonnull String status,
                               @Nullable File file) {
         String elasticSearchId = "";
         String indexLogs = ElasticJenkinsUtil.getProperty("jenkins_logs");
 
-        List<String> update = new ArrayList<>();
-        try {
+        long size = 0;
+        if(Files.exists(file.toPath())) {
 
-            //List<String> list = Files.readAllLines(build.getLogFile().toPath());
-            BufferedReader br = new BufferedReader(new FileReader(file.getPath()));
-            String oneLine;
-            while((oneLine = br.readLine()) != null) {
-            //for(String oneLine : logs) {
-                //update.add(URLEncoder.encode(oneLine,charset));
-                update.add(oneLine);
+            try {
+                size = Files.size(file.toPath());
+            } catch (IOException e) {
+                size = 0;
             }
-            //genericBuild.setLogId(update);
-
-        } catch (IOException e) {
-            LOGGER.log(Level.SEVERE,"An unexpected response was received:",e);
         }
-
         String suffix = "";
-        if (update.size() > 0 ) {
-            String typeLog = new SimpleDateFormat("yyyy_MM").format(new Date());
-            String logId = null;
-            String uriLogs = url + "/" + indexLogs + "/" + typeLog+"/";
-            String json = "{ \"logs\" : \n" +
-                    gson.toJson(update,List.class) +
-                    "}";
-            LOGGER.log(Level.FINEST,"URI: {0}, json: {1}", new Object[]{uriLogs,json});
-            ElasticsearchResult esr2 = gson.fromJson(ElasticJenkinsUtil.elasticPost(uriLogs,json),ElasticsearchResult.class);
-            if (esr2.getResult().equals("created")) logId = esr2.get_id();
-            suffix = typeLog.concat("/"+logId);
-
+        if (size > 0 ) {
+            try {
+                String typeLog = new SimpleDateFormat("yyyy_MM").format(new Date());
+                String logId = null;
+                String uriLogs = url + "/" + typeLog + "/" + indexLogs + "/";
+                String json = "{ \"logs\" : \n" +
+                        gson.toJson(Files.readAllLines(file.toPath()), List.class) +
+                        "}";
+                LOGGER.log(Level.FINEST, "URI: {0}, json: {1}", new Object[]{uriLogs, json});
+                ElasticsearchResult esr2 = gson.fromJson(ElasticJenkinsUtil.elasticPost(uriLogs, json), ElasticsearchResult.class);
+                if (esr2.getResult().equals("created")) logId = esr2.get_id();
+                suffix = typeLog+"/"+indexLogs+"/"+logId;
+            }catch (IOException e) {
+                LOGGER.log(Level.SEVERE,"An unexpected response was received:",e);
+            }
         }
-        String uri = url+"/"+index+"/"+type+"/"+id+"/_update";
+        String uri = url+"/"+jenkinsBuildsIndex+"/"+jenkinsBuildsType+"/"+id+"/_update";
         String json = null;
         try {
             json = "{\n" +
@@ -174,19 +180,18 @@ public class ElasticManager {
 
     /**
      * Get Jenkins build history with a specific length.
-     * @param index : Job name hash
-     * @param type : builds
-     * @param viewType: if we select the cluster view we receive all builds of the cluster
+     * @param projectName : Job name hash
+     * @param viewType : if we select the cluster view we receive all builds of the cluster
      * @param paginationSize : number of results to return
      * @param paginationStart : starts from where
      * @return: list of builds
      */
-    public List<GenericBuild> getPaginateBuildHistory(@Nonnull String index, @Nonnull String type,
+    public List<GenericBuild> getPaginateBuildHistory(@Nonnull String projectName,
                                                       @Nonnull String viewType,
                                                       @Nonnull Integer paginationSize, @Nullable String paginationStart) {
 
         List<GenericBuild> listBuilds = new ArrayList<>();
-        String uri = url+"/"+jenkinsBuildsIndex+"/"+type+"/_search";
+        String uri = url+"/"+jenkinsBuildsIndex+"/"+jenkinsBuildsType+"/_search";
 
         String masters = master;;
         if(viewType.equals("cluster"))
@@ -200,7 +205,7 @@ public class ElasticManager {
                 "       \"bool\": {\n" +
                 "           \"must\": [\n" +
                 "               { \"match\": { \"jenkinsMasterName\": \""+masters+"\" }},\n" +
-                "               { \"match\": { \"projectId\": \""+getProjectId(index)+"\" }}\n" +
+                "               { \"match\": { \"projectId\": \""+getProjectId(projectName)+"\" }}\n" +
                 "           ]\n" +
                 "       }\n" +
                 "   },\n" +
@@ -213,12 +218,8 @@ public class ElasticManager {
         String jsonResponse = ElasticJenkinsUtil.elasticPost(uri,json);
 
         LOGGER.log(Level.FINEST,"jsonResponse:"+jsonResponse);
-        //LOGGER.log(Level.INFO,"jsin hits: "+JsonPath.parse(jsonResponse).read("$.hits.hits").toString());
-        //List<GenericBuild> listBuilds = gson.fromJson(JsonPath.parse(jsonResponse).read("$.hits.hits").toString(),List.class);
 
-//        Integer total = JsonPath.parse(jsonResponse).read("$.hits.total");
-//        Integer max = total < paginationSize ? total : paginationSize;
-          Integer max = JsonPath.parse(jsonResponse).read("$.hits.hits.length()");
+        Integer max = JsonPath.parse(jsonResponse).read("$.hits.hits.length()");
         for(int i=0;i<max;i++) {
             LOGGER.log(Level.FINEST,"Index: {0}, content: {1}", new Object[]{i,JsonPath.parse(jsonResponse).read("$.hits.hits["+i+"]._source").toString()});
             GenericBuild genericBuild =  gson.fromJson(JsonPath.parse(jsonResponse).read(
@@ -229,10 +230,17 @@ public class ElasticManager {
         return listBuilds;
     }
 
-    public List<GenericBuild> getNewResults(@Nonnull String index, @Nonnull String type,
+    /**
+     * Get the newest build saved since the last fetch
+     * @param projectHash : Hash of the project
+     * @param lastFetch : Timestamp of the last fetch
+     * @param viewType : View can be either cluster or server. If the cluster is selected we display all builds of the servers in the cluster
+     * @return: list of builds
+     */
+    public List<GenericBuild> getNewResults(@Nonnull String projectHash,
                                             @Nonnull String lastFetch, String viewType) {
         List<GenericBuild> listBuilds = new ArrayList<>();
-        String uri = url+"/"+jenkinsBuildsIndex+"/"+type+"/_search";
+        String uri = url+"/"+jenkinsBuildsIndex+"/"+jenkinsBuildsType+"/_search";
 
         String masters = master;;
         if(viewType.equals("cluster"))
@@ -244,7 +252,7 @@ public class ElasticManager {
                 "           \"must\": [\n" +
                 "               { \"match\": { \"jenkinsMasterName\": \""+masters+"\" }},\n" +
                 "               { \"range\": { \"startDate\": { \"gte\": "+lastFetch+" }}},\n" +
-                "               { \"match\": { \"projectId\": \""+getProjectId(index)+"\" }}\n" +
+                "               { \"match\": { \"projectId\": \""+getProjectId(projectHash)+"\" }}\n" +
                 "           ]\n" +
                 "       }\n" +
                 "   }\n" +
@@ -266,55 +274,61 @@ public class ElasticManager {
         return listBuilds;
     }
 
-    protected GenericBuild searchById(@Nonnull String index, @Nonnull String type,@Nonnull String id) {
+    /**
+     * Search a build by its Elasticsearch id
+     * @param id : Elasticsearch id
+     * @return: the build
+     */
+    protected GenericBuild searchById(@Nonnull String id) {
 
-        String uri = url+"/"+jenkinsBuildsIndex+"/"+type+"/"+id+"/_source";
+        String uri = url+"/"+jenkinsBuildsIndex+"/"+jenkinsBuildsType+"/"+id+"/_source";
         return gson.fromJson(ElasticJenkinsUtil.elasticGet(uri),GenericBuild.class);
     }
 
-    public String getLogOutputId(@Nonnull String index, @Nonnull String type, @Nonnull String id) {
-        String uri = url+"/"+jenkinsBuildsIndex+"/"+type+"/"+id+"/_source";
+    /**
+     * Get Elasticsearch id of the log output
+     * @param id :
+     * @return
+     */
+    public String getLogOutputId(@Nonnull String id) {
+        String uri = url+"/"+jenkinsBuildsIndex+"/"+jenkinsBuildsType+"/"+id+"/_source";
         return gson.fromJson(JsonPath.parse(ElasticJenkinsUtil.elasticGet(uri)).read("$.logId").toString(),String.class);
     }
 
-    public List<String> getLogOutput(@Nonnull String suffix) {
+    /**
+     * Get the output from Elasticsearch and write it to a file. Then return the file
+     * @param suffix: The Elasticsearch index/type/id of where the log is available
+     * @param id: the elasticsearch id
+     * @return: file where the log has been written
+     */
+    public File getLogOutput(@Nonnull String suffix,@Nonnull String id) {
         String indexLogs = ElasticJenkinsUtil.getProperty("jenkins_logs");
-        String uri = url+"/"+indexLogs+"/"+suffix+"/_source";
-        return gson.fromJson(JsonPath.parse(ElasticJenkinsUtil.elasticGet(uri)).read("$.logs").toString(),List.class);
-    }
+        String uri = url+"/"+suffix+"/_source";
 
-    public AnnotatedLargeText getLog() {
-        return new AnnotatedLargeText<GenericBuild>(new File(Jenkins.getInstance().getRootDir(),"/myfile.txt"),Charset.defaultCharset(),true,new GenericBuild());
-    }
+        File file = new File(Jenkins.getInstance().getRootDir(),"/"+id);
+        BufferedWriter writer = null;
 
+        try {
+            writer = new BufferedWriter(new FileWriter(file.getPath(),true));
+            for(String row: (List<String>) gson.fromJson(JsonPath.parse(ElasticJenkinsUtil.elasticGet(uri)).read("$.logs").toString(),List.class)) {
+                writer.append(row+"\n");
+            }
 
-
-    public List<ElasticMaster> getMasterByNameAndCluster(@Nonnull String masterName,
-                                                         @Nonnull String clusterName) {
-        List<ElasticMaster> listMasters = new ArrayList<>();
-        String uri = url+"/"+jenkinsManageIndexCluster+"/"+ jenkinsManageClusters +"/_search";
-        String json = "{ \"query\" : { \n" +
-                " \"bool\" : {\n" +
-                " \"should\" : [\n" +
-                "     { \"match\" : { \"jenkinsMasterName\" : \""+masterName+"\" }},\n" +
-                "     { \"match\" : { \"clusterName\": \""+clusterName+"\"}}\n" +
-                "     ]\n" +
-                "}\n" +
-                "}\n" +
-                "}";
-        String jsonResponse = ElasticJenkinsUtil.elasticPost(uri,json);
-
-        Integer total = JsonPath.parse(jsonResponse).read("$.hits.total");
-        for(int i=0;i<total;i++) {
-
-            ElasticMaster elasticMaster =  gson.fromJson(JsonPath.parse(jsonResponse).read(
-                    "$.hits.hits["+i+"]._source").toString(),ElasticMaster.class);
-            listMasters.add(elasticMaster);
+            writer.close();
+        } catch (IOException e) {
+            LOGGER.log(Level.SEVERE,"An error occured while trying to write file:"+file.getPath(),e);
         }
+        return file;
 
-        return listMasters;
     }
 
+    /**
+     * Get the Elasticsearch id of a Jenkins master based on its name and its cluster name
+     * @param masterName: Name of the jenkins master
+     * @param clusterName: Name of the cluster
+     * @return: the list of match
+     */
+    @VisibleForTesting
     public List<String> getMasterIdByNameAndCluster(@Nonnull String masterName,
                                                      @Nonnull String clusterName) {
         List<String> listIds = new ArrayList();
@@ -342,6 +356,11 @@ public class ElasticManager {
         return listIds;
     }
 
+    /**
+     * Get jenkins masters for a specific cluster
+     * @param clusterName: cluster name
+     * @return: The list of masters separated by space
+     */
     public String getNodesByCluster(@Nonnull String clusterName) {
         String uri = url+"/"+jenkinsManageIndexCluster+"/"+ jenkinsManageClusters +"/_search";
         String json = "{ \"query\" : { \n" +
@@ -367,6 +386,12 @@ public class ElasticManager {
         return result;
     }
 
+    /**
+     * Create a mapping with the Elasticsearch id of the project and its hashed name and its encoded name
+     * @param projectHash: the URL of the project hashed
+     * @param projectEncodedName: the URL of the project encoded
+     * @return: the Elasticsearch id
+     */
     public String addProjectMapping(@Nonnull String projectHash, @Nonnull String projectEncodedName) {
         String uri = url+"/"+jenkinsManageIndexMapping+"/"+jenkinsManageMapping;
         //First we check if the hash has been already saved
@@ -397,11 +422,17 @@ public class ElasticManager {
         return eid;
     }
 
-
-    public List<GenericBuild> findByParameter(@Nonnull String index, @Nonnull String type,
-                                               @Nonnull String viewType,@Nonnull String parameter ){
+    /**
+     * Find builds by its parameters. Depending of the type of the view we search in all nodes of the cluster or a specific server
+     * @param hash: the project hashed name
+     * @param viewType: the view Type (cluster/server)
+     * @param parameter: the parameter value
+     * @return: The list of builds
+     */
+    public List<GenericBuild> findByParameter(@Nonnull String hash,
+                                              @Nonnull String viewType, @Nonnull String parameter){
         List<GenericBuild> listBuilds = new ArrayList<>();
-        String uri = url+"/"+jenkinsBuildsIndex+"/"+type+"/_search";
+        String uri = url+"/"+jenkinsBuildsIndex+"/"+jenkinsBuildsType+"/_search";
 
         String masters = master;;
         if(viewType.equals("cluster"))
@@ -413,7 +444,7 @@ public class ElasticManager {
                 "      \"must\": [\n" +
                 "        { \"match\": { \"jenkinsMasterName\": \""+masters+"\" }},\n" +
                 "        { \"match\": { \"parameters.value\": \""+parameter+"\" }},\n" +
-                "        { \"match\": { \"projectId\": \""+getProjectId(index)+"\" }}\n" +
+                "        { \"match\": { \"projectId\": \""+getProjectId(hash)+"\" }}\n" +
                 "      ]\n" +
                 "    }\n" +
                 "  }\n" +
@@ -436,7 +467,12 @@ public class ElasticManager {
     }
 
 
-
+    /**
+     * Add an item from the queue to Elasticsearch. This prevent to lose the queued items if a crash occurs
+     * @param waitingItem: the item
+     * @param projectId: the project id
+     * @return: the elasticsearch id
+     */
     public String addQueueItem(Queue.WaitingItem waitingItem,String projectId) {
         GenericBuild genericBuild = new GenericBuild();
         genericBuild.setName(ElasticJenkinsUtil.convertUrlToFullName(waitingItem.task.getUrl()));
@@ -457,8 +493,6 @@ public class ElasticManager {
         }
         genericBuild.setParameters(listParameters);
         genericBuild.setQueuedSince(waitingItem.getInQueueSince());
-        //genericBuild.setLaunchedByName(User.current().getDisplayName());
-        //genericBuild.setLaunchedById(User.current().getId());
         genericBuild.setJenkinsMasterName(master);
         try {
             genericBuild.setExecutedOn(Executor.currentExecutor().getOwner().getHostName());
@@ -483,8 +517,12 @@ public class ElasticManager {
         return elasticSearchId;
     }
 
+    /**
+     * Update the status of the item
+     * @param leftItem: the item
+     * @param eId: the elasticsearch id
+     */
     public void updateQueueItem(Queue.LeftItem leftItem,String eId) {
-        String index = ElasticJenkinsUtil.getHash(leftItem.task.getUrl().split("/"+Long.toString(leftItem.getId())+"/$")[0]);
         String uri = url+"/"+jenkinsQueueIndex+"/"+jenkinsQueueType+"/"+eId+"/_update";
 
         String json = null;
@@ -500,6 +538,11 @@ public class ElasticManager {
 
     }
 
+    /**
+     * Get the Elasticsearch id of the project
+     * @param projectHash: hash of the project
+     * @return: Elasticsearch id
+     */
     public String getProjectId(String projectHash) {
         String uri = url+"/"+jenkinsManageIndexMapping+"/"+jenkinsManageMapping+"/_search";
         //First we check if the hash has been already saved
@@ -523,7 +566,10 @@ public class ElasticManager {
                 "$.hits.hits[0]._id").toString(),String.class);
     }
 
-
+    /**
+     * Get the last 3 current builds, to display to the panel
+     * @return: the list of the current builds
+     */
     public List<GenericBuild> getLastCurrentBuilds() {
         List<GenericBuild> listBuilds = new ArrayList<>();
         String masters = getNodesByCluster(clusterName);
@@ -553,6 +599,10 @@ public class ElasticManager {
         return listBuilds;
     }
 
+    /**
+     * Get the last 3 current items to display it in the panel
+     * @return: list of the item
+     */
     public List<GenericBuild> getLastCurrentItems() {
         List<GenericBuild> listBuilds = new ArrayList<>();
         String masters = getNodesByCluster(clusterName);
@@ -582,6 +632,10 @@ public class ElasticManager {
         return listBuilds;
     }
 
+    /**
+     * Count the number of the current builds and display it to the panel
+     * @return: the number of the current build
+     */
     public Integer getCountCurrentBuilds() {
         String masters = getNodesByCluster(clusterName);
         String uri = url+"/"+jenkinsBuildsIndex+"/builds/_count";
@@ -601,6 +655,10 @@ public class ElasticManager {
 
     }
 
+    /**
+     * Get the count of the current item and display it to the panel
+     * @return: The number of current item
+     */
     public Integer getCountCurrentItem() {
         String masters = getNodesByCluster(clusterName);
         String uri = url+"/"+jenkinsQueueIndex+"/queues/_count";

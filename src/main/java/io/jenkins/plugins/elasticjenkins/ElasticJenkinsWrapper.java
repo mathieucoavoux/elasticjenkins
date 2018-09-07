@@ -3,14 +3,8 @@ package io.jenkins.plugins.elasticjenkins;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import io.jenkins.plugins.elasticjenkins.util.ElasticJenkinsUtil;
 import io.jenkins.plugins.elasticjenkins.util.ElasticManager;
@@ -74,7 +68,7 @@ public class ElasticJenkinsWrapper extends SimpleBuildWrapper {
 				LOGGER.log(Level.SEVERE,"Charset not supported:"+ElasticJenkinsUtil.getProperty("elasticCharset"));
 			}
 			LOGGER.log(Level.FINEST,"Job hash: "+index);
-			id = em.addBuild(projectId,"builds",build);
+			id = em.addBuild(projectId,build);
 
         }
 
@@ -100,10 +94,8 @@ public class ElasticJenkinsWrapper extends SimpleBuildWrapper {
 					}
 
 				}
-				//Stream<String> stream = Files.lines(build.getLogFile().toPath());
 
-				//id = em.updateBuild("jenkins_builds","builds",build,id,status,build.getLog(maxLines));
-				id = em.updateBuild("jenkins_builds","builds",build,id,status,build.getLogFile());
+				id = em.updateBuild(id,status,build.getLogFile());
             }
         }
     }
