@@ -144,5 +144,7 @@ You can filter the view either to display all builds for the whole cluster or on
 You can also search for a build based on a parameter 
 
 Finally you can see that two new widgets are available.
+
 ![simple-architecture](doc/widgets.png)
+
 They display the current items in the queue for the cluster and the current buils.

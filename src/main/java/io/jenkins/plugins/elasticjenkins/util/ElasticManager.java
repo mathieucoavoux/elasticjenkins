@@ -13,6 +13,7 @@ import io.jenkins.plugins.elasticjenkins.entity.ElasticsearchResult;
 import io.jenkins.plugins.elasticjenkins.entity.GenericBuild;
 import io.jenkins.plugins.elasticjenkins.entity.Parameters;
 import jenkins.model.Jenkins;
+import org.kohsuke.stapler.bind.JavaScriptMethod;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -677,5 +678,6 @@ public class ElasticManager {
         return JsonPath.parse(jsonResponse).read("$.count");
 
     }
+
 
 }

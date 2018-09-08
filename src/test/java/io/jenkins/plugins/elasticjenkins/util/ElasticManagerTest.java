@@ -47,7 +47,7 @@ public class ElasticManagerTest  {
     public String clusterIndex = "jenkins_manage_clusters";
     public String mappingIndex = "jenkins_manage_mapping";
 
-    public static String url = "http://localhost:9200";
+    public static String url = "http://192.168.44.1:9200";
 
     public Computer computer;
     public Node node;
@@ -143,6 +143,7 @@ public class ElasticManagerTest  {
     @Test
     public void allTests() throws IOException, InterruptedException {
 
+
         createIndex();
         ElasticJenkinsManagement elasticJenkinsManagement = new ElasticJenkinsManagement();
         elasticJenkinsManagement.addJenkinsMaster(master,clusterName,"TEST_SERVER",master,clusterIndex);
@@ -167,6 +168,7 @@ public class ElasticManagerTest  {
         testGetProjectId();
 
         deleteIndices();
+
     }
 
     public void createIndex() {

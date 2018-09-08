@@ -27,7 +27,7 @@
                             }
 
 
-                            eja.getPagninatedHistoryJson(type,view_type,'20',number,function(old) {
+                            eja.getPagninatedHistoryJson(view_type,'20',number,function(old) {
                                    old_build_action = old.responseObject();
                                     addContent(old_build_action,'after');
 
@@ -108,7 +108,7 @@
                 </thead>
                 <tbody id="result_tbody">
 
-                    <j:forEach var="item" items="${it.getPaginatedHistory('builds','cluster',20,'0')}">
+                    <j:forEach var="item" items="${it.getPaginatedHistory('cluster',20,'0')}">
                         <j:set var="bid" value="${item.getId()}" />
                         <j:set var="bname" value="${item.getName()}" />
                         <j:set var="master" value="${item.getJenkinsMasterName()}" />

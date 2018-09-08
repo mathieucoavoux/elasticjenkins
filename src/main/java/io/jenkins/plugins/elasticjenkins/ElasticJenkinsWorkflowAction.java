@@ -2,22 +2,17 @@ package io.jenkins.plugins.elasticjenkins;
 
 
 import com.google.gson.Gson;
-import com.thoughtworks.xstream.annotations.XStreamOmitField;
-
 import hudson.Extension;
 import hudson.console.AnnotatedLargeText;
-import hudson.model.*;
-import hudson.slaves.ComputerLauncher;
-
+import hudson.model.Action;
+import hudson.model.Run;
 import io.jenkins.plugins.elasticjenkins.entity.GenericBuild;
 import io.jenkins.plugins.elasticjenkins.util.ElasticJenkinsUtil;
-
 import io.jenkins.plugins.elasticjenkins.util.ElasticManager;
-
-import jenkins.model.Jenkins;
-import jenkins.model.RunAction2;
+import jenkins.model.TransientActionFactory;
 import org.apache.commons.jelly.XMLOutput;
-
+import org.jenkinsci.plugins.workflow.job.WorkflowJob;
+import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 import org.kohsuke.stapler.HttpResponse;
 import org.kohsuke.stapler.HttpResponses;
 import org.kohsuke.stapler.StaplerRequest;
@@ -25,66 +20,68 @@ import org.kohsuke.stapler.StaplerResponse;
 import org.kohsuke.stapler.bind.JavaScriptMethod;
 import org.xml.sax.SAXException;
 
+import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class ElasticJenkinsAction extends ComputerLauncher implements RunAction2 {
-//@Extension
-//public class ElasticJenkinsAction implements RootAction {
-    private AbstractProject<?,?> project;
+public class ElasticJenkinsWorkflowAction implements Action {
 
-    private static final Logger LOGGER = Logger.getLogger(ElasticJenkinsAction.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(ElasticJenkinsWorkflowAction.class.getName());
 
-    protected AbstractBuild<?,?> build;
+    public final WorkflowJob target;
 
-    ElasticJenkinsAction(AbstractProject<?,?> project) {
-        this.project = project;
+    private ElasticJenkinsWorkflowAction(WorkflowJob job) {
+        this.target = job;
     }
 
+    @CheckForNull
+    @Override
     public String getIconFileName() {
         return "/plugin/elasticjenkins/24x24/elasticjenkins.png";
     }
 
+    @CheckForNull
+    @Override
     public String getDisplayName() {
         return "Elastic build history";
     }
 
+    @CheckForNull
+    @Override
     public String getUrlName() {
-        return "ej1";
+        return "ej2";
     }
 
-    public AbstractProject<?,?> getProject() {
-        return project;
+    @Extension
+    public static class Factory extends TransientActionFactory<WorkflowJob> {
+
+        @Override
+        public Class<WorkflowJob> type() {
+            return WorkflowJob.class;
+        }
+
+        @Nonnull
+        @Override
+        public Collection<? extends Action> createFor(@Nonnull WorkflowJob target) {
+            return Collections.singleton(new ElasticJenkinsWorkflowAction(target));
+        }
     }
-
-
-    @Override
-    public void onAttached(Run<?,?> r) {
-        build = (AbstractBuild<?,?>) r;
-    }
-
-    @Override
-    public void onLoad(Run<?, ?> r) {
-        build = (AbstractBuild<?,?>) r;
-    }
-
 
     @JavaScriptMethod
     public List<GenericBuild> getPaginatedHistory(@Nonnull String viewType,
-                                                  @Nonnull Integer paginationSize,@Nonnull String paginationStart) {
+                                                  @Nonnull Integer paginationSize, @Nonnull String paginationStart) {
         ElasticManager elasticManager = new ElasticManager();
-        String index = ElasticJenkinsUtil.getHash(project.getUrl().split("/$")[0]);
+        String index = ElasticJenkinsUtil.getHash(target.getUrl().split("/$")[0]);
 
-       return  elasticManager.getPaginateBuildHistory(index, viewType , paginationSize, paginationStart);
+        return  elasticManager.getPaginateBuildHistory(index, viewType , paginationSize, paginationStart);
     }
 
 
@@ -93,7 +90,7 @@ public class ElasticJenkinsAction extends ComputerLauncher implements RunAction2
                                            @Nonnull String viewType,
                                            @Nonnull Integer paginationSize,@Nonnull String paginationStart) {
         ElasticManager elasticManager = new ElasticManager();
-        String index = ElasticJenkinsUtil.getHash(project.getUrl().split("/$")[0]);
+        String index = ElasticJenkinsUtil.getHash(target.getUrl().split("/$")[0]);
         Gson gson = new Gson();
 
         return gson.toJson(elasticManager.getPaginateBuildHistory(index, viewType , paginationSize, paginationStart));
@@ -102,7 +99,7 @@ public class ElasticJenkinsAction extends ComputerLauncher implements RunAction2
     @JavaScriptMethod
     public String getNewResultsJson(@Nonnull String type,@Nonnull String viewType,@Nonnull String lastFetch) {
         ElasticManager elasticManager = new ElasticManager();
-        String projectHash = ElasticJenkinsUtil.getHash(project.getUrl().split("/$")[0]);
+        String projectHash = ElasticJenkinsUtil.getHash(target.getUrl().split("/$")[0]);
         Gson gson = new Gson();
 
 
@@ -121,21 +118,22 @@ public class ElasticJenkinsAction extends ComputerLauncher implements RunAction2
 
     public String getBuildByParameters(@Nonnull String type,@Nonnull String viewType,@Nonnull String parameter) {
         ElasticManager elasticManager = new ElasticManager();
-        String projectHash = ElasticJenkinsUtil.getHash(project.getUrl().split("/$")[0]);
+        String projectHash = ElasticJenkinsUtil.getHash(target.getUrl().split("/$")[0]);
         Gson gson = new Gson();
         return gson.toJson(elasticManager.findByParameter(projectHash, viewType,parameter));
     }
 
     @JavaScriptMethod
-    public void writeOutput(XMLOutput out,String id) throws IOException, SAXException {
+    public void writeOutput(XMLOutput out, String id) throws IOException, SAXException {
         ElasticManager elasticManager = new ElasticManager();
         //Get log id
-        String index = ElasticJenkinsUtil.getHash(project.getUrl().split("/$")[0]);
+        String index = ElasticJenkinsUtil.getHash(target.getUrl().split("/$")[0]);
         String suffix = elasticManager.getLogOutputId(id);
 
         File logOutput = elasticManager.getLogOutput(URLDecoder.decode(suffix,"UTF-8"),id);
         LOGGER.log(Level.FINEST,"Log output:"+logOutput.getPath());
-        new AnnotatedLargeText<GenericBuild>(logOutput,Charset.defaultCharset(),true,new GenericBuild()).writeHtmlTo(0,out.asWriter());
+        //Get last WorkfowRun to enable color if Ansi color plugin is installed
+        new AnnotatedLargeText<>(logOutput,Charset.defaultCharset(),true,target.getLastBuild()).writeHtmlTo(0,out.asWriter());
 
         logOutput.delete();
 

@@ -1,0 +1,33 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler"
+         xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson"
+         xmlns:f="/lib/form" xmlns:i="jelly:fmt">
+
+
+    <l:layout  norefresh="true">
+        <link type="text/css" href="${rootURL}/plugin/elasticjenkins/css/bootstrap.min.css" rel="stylesheet"/>
+        <link type="text/css" rel="stylesheet" href="${rootURL}/plugin/elasticjenkins/css/default.css"/>
+
+        <st:include it="${app}" page="sidepanel"/>
+        <l:main-panel>
+
+            <script src="${rootURL}/plugin/elasticjenkins/js/utils.js"></script>
+                       <!-- <script src="${rootURL}/plugin/elasticjenkins/js/highlight.pack.js"></script> -->
+                                <script>hljs.initHighlightingOnLoad();</script>
+        <h1>${it.displayName}</h1>
+        <h2>Get log output</h2>
+        <div>
+                    <j:out value="${h.generateConsoleAnnotationScriptAndStylesheet()}"/>
+                    <j:choose>
+                    <pre class="console-output">
+                                			<st:getOutput var="output" />
+                                			<code>
+                                			 <j:whitespace>${it.writeOutput(output,request.getParameter('id'))}</j:whitespace>
+                                             <!--   <j:whitespace>${it.writeLogTo(output)}</j:whitespace> -->
+                                			</code>
+                              			</pre>
+                              			</j:choose>
+                </div>
+                </l:main-panel>
+                    </l:layout>
+                </j:jelly>

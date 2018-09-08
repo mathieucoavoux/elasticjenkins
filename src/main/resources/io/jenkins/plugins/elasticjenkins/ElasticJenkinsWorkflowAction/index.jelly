@@ -1,0 +1,152 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler"
+         xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson"
+         xmlns:f="/lib/form" xmlns:i="jelly:fmt">
+
+
+    <l:layout  norefresh="true">
+        <link type="text/css" href="${rootURL}/plugin/elasticjenkins/css/bootstrap.min.css" rel="stylesheet"/>
+        <link type="text/css" rel="stylesheet" href="${rootURL}/plugin/elasticjenkins/css/default.css"/>
+
+        <st:include it="${app}" page="sidepanel"/>
+        <l:main-panel>
+
+            <script src="${rootURL}/plugin/elasticjenkins/js/utils.js"></script>
+
+            <script type="text/javascript">
+                var number = 0;
+                var last_fetch = new Date().getTime();
+                var eja = <st:bind value="${it}" />;
+                function getPaginatedHistory(type,reset) {
+                var view_type = document.getElementById("select_view_type").value;
+                var divNumberPage = document.getElementById("number_pages");
+                if(reset == true) {
+                number = 0;
+                }else{
+                number = number + 20;
+                }
+
+
+                eja.getPagninatedHistoryJson(view_type,'20',number,function(old) {
+                old_build_action = old.responseObject();
+                addContent(old_build_action,'after');
+
+                });
+
+                eja.getNewResultsJson(type,view_type,last_fetch,function(neb) {
+                new_build_action = neb.responseObject();
+                addContent(new_build_action,'before');
+
+                });
+                last_fetch = new Date().getTime();
+
+                }
+
+                function changeHistoryView() {
+                var new_tbody = document.createElement("tbody");
+                new_tbody.setAttribute("name","result_tbody");
+                new_tbody.setAttribute("id","result_tbody");
+                var old_tbody = document.getElementById("result_tbody");
+                old_tbody.parentNode.replaceChild(new_tbody, old_tbody);
+                getPaginatedHistory('builds',true);
+                }
+
+                function searchResult() {
+                var view_type = document.getElementById("select_view_type").value;
+                var filter_value = document.getElementById("input_filter").value;
+                var filter_type = document.getElementById("select_filter_type").value;
+                var new_tbody = document.createElement("tbody");
+                new_tbody.setAttribute("name","result_tbody");
+                new_tbody.setAttribute("id","result_tbody");
+                var old_tbody = document.getElementById("result_tbody");
+                old_tbody.parentNode.replaceChild(new_tbody, old_tbody);
+                eja.filterResult('builds',view_type,filter_type,filter_value,function(fil) {
+                array_filter = fil.responseObject();
+                addContent(array_filter,'after');
+                });
+                }
+            </script>
+            <h1>${it.displayName}</h1>
+
+            <div class="container-fluid">
+                <form action="#">
+                    <div class="row">
+                        <label>History of:</label>
+                        <div class="col">
+
+                            <select id="select_view_type" name="select_view_type" class="form-control" onchange="changeHistoryView()">
+                                <option value="cluster">Whole cluster</option>
+                                <option value="server">This server</option>
+                            </select>
+                        </div>
+                        <label>Filter:</label>
+                        <div class="col">
+                            <select id="select_filter_type" name="select_filter_type" class="form-control">
+                                <option value="parameters">Parameters</option>
+                            </select>
+                        </div>
+                        <div class="col">
+                            <input type="text" id="input_filter" name="input_filter" class="form-control" placeholder="Search..." />
+
+                        </div>
+                        <button type="submit" class="btn btn-primary mb-2" onclick="searchResult()">Submit</button>
+                    </div>
+                </form>
+                <div class="row">
+                    <table class="table" id="table_result" name="table_result">
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" onclick="check_all()" id="chk-all" name="all" value="all" /></th>
+                                <th>Id</th>
+                                <th>Project</th>
+                                <th>Status</th>
+                                <th>Parameters</th>
+                                <th>Master</th>
+                                <th>Executed on</th>
+                                <th>Log</th>
+                            </tr>
+                        </thead>
+                        <tbody id="result_tbody">
+
+                            <j:forEach var="item" items="${it.getPaginatedHistory('cluster',20,'0')}">
+                                <j:set var="bid" value="${item.getId()}" />
+                                <j:set var="bname" value="${item.getName()}" />
+                                <j:set var="master" value="${item.getJenkinsMasterName()}" />
+                                <j:set var="projectId" value="${item.getProjectId()}" />
+                                <j:set var="masterId" value="${item.getJenkinsMasterId()}" />
+                                <tr>
+                                    <th scope="row">
+                                        <!-- <j:if test="${!build.getRecoverState()}"> -->
+                                        <input type="checkbox" id="chk-${bid}" name="chk-id" value="${master},${bname},${bid}" />
+                                        <!-- </j:if> -->
+                                        <!-- <j:if test="${build.getRecoverState()}">
+                                            <input type="checkbox" id="chk-${bid}" name="chk-id" value="${uniqueid},${bname},${bid}" disabled="enabled" />
+                                        </j:if> -->
+                                    </th>
+                                    <td>${bid}</td>
+                                    <td>${bname}</td>
+                                    <td>${item.getStatus()}</td>
+                                    <td>
+                                        <j:forEach var="palist" items="${item.getParameters()}">
+                                            <pre>${palist.getName()} : ${palist.getValue()}</pre>
+                                        </j:forEach>
+                                    </td>
+                                    <td>${item.getJenkinsMasterName()}</td>
+                                    <td>${item.getExecutedOn()}</td>
+                                    <td><a href="getLog?id=${bid}_${projectId}_${masterId}"><img src="${rootURL}/plugin/elasticjenkins/36x36/log_icon.png" ></img></a></td>
+                                </tr>
+                            </j:forEach>
+
+                        </tbody>
+                    </table>
+                </div>
+                <div class="row">
+                    <div class="col-md-4"></div>
+                    <div class="col-md-4"> <button onclick="getPaginatedHistory('builds',false)" type="button" class="btn btn-lg btn-outline-info">Get more builds</button></div>
+                    <div class="col-md-4"></div>
+                </div>
+            </div>
+
+        </l:main-panel>
+    </l:layout>
+</j:jelly>

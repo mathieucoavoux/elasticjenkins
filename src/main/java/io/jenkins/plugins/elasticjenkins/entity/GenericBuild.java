@@ -4,6 +4,8 @@ package io.jenkins.plugins.elasticjenkins.entity;
 
 import hudson.console.AnnotatedLargeText;
 
+import hudson.model.Job;
+import hudson.model.Run;
 import jenkins.model.Jenkins;
 import org.apache.commons.jelly.XMLOutput;
 
@@ -40,6 +42,7 @@ public class GenericBuild {
      */
     @Nullable
     protected Long endDate;
+
 
     @Nullable
     public Long getQueuedSince() {
