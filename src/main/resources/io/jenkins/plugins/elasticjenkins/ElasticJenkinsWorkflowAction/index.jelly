@@ -69,29 +69,29 @@
             <h1>${it.displayName}</h1>
 
             <div class="container-fluid">
-                <form action="#">
-                    <div class="row">
-                        <label>History of:</label>
-                        <div class="col">
 
-                            <select id="select_view_type" name="select_view_type" class="form-control" onchange="changeHistoryView()">
-                                <option value="cluster">Whole cluster</option>
-                                <option value="server">This server</option>
-                            </select>
-                        </div>
-                        <label>Filter:</label>
-                        <div class="col">
-                            <select id="select_filter_type" name="select_filter_type" class="form-control">
-                                <option value="parameters">Parameters</option>
-                            </select>
-                        </div>
-                        <div class="col">
-                            <input type="text" id="input_filter" name="input_filter" class="form-control" placeholder="Search..." />
+                <div class="row">
+                    <label>History of:</label>
+                    <div class="col">
 
-                        </div>
-                        <button type="submit" class="btn btn-primary mb-2" onclick="searchResult()">Submit</button>
+                        <select tabindex="1" id="select_view_type" name="select_view_type" class="form-control" onchange="changeHistoryView()">
+                            <option value="cluster">Whole cluster</option>
+                            <option value="server">This server</option>
+                        </select>
                     </div>
-                </form>
+                    <label>Filter:</label>
+                    <div class="col">
+                        <select tabindex="2" id="select_filter_type" name="select_filter_type" class="form-control">
+                            <option value="parameters">Parameters</option>
+                        </select>
+                    </div>
+                    <div class="col">
+                        <input tabindex="3" type="text" id="input_filter" name="input_filter" class="form-control" placeholder="Search..." />
+
+                    </div>
+                    <button tabindex="4" type="button" class="btn btn-primary mb-2" onclick="searchResult()">Submit</button>
+                </div>
+
                 <div class="row">
                     <table class="table" id="table_result" name="table_result">
                         <thead>

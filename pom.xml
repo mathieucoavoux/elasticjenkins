@@ -40,14 +40,14 @@
       </developer>
     </developers>
 
-    <!-- Assuming you want to host on @jenkinsci:
-    <url>https://wiki.jenkins.io/display/JENKINS/TODO+Plugin</url>
+    <!-- Assuming you want to host on @jenkinsci:  -->
+    <url>https://github.com/mathieucoavoux/elasticjenkins</url>
     <scm>
-        <connection>scm:git:git://github.com/jenkinsci/${project.artifactId}-plugin.git</connection>
-        <developerConnection>scm:git:git@github.com:jenkinsci/${project.artifactId}-plugin.git</developerConnection>
-        <url>https://github.com/jenkinsci/${project.artifactId}-plugin</url>
+        <connection>scm:git:git://github.com/mathieucoavoux/elasticjenkins.git</connection>
+        <!-- <developerConnection>scm:git:git@github.com:jenkinsci/${project.artifactId}-plugin.git</developerConnection> -->
+        <url>https://github.com/mathieucoavoux/elasticjenkins.git</url>
     </scm>
-    -->
+
 
     <dependencies>
         <!--

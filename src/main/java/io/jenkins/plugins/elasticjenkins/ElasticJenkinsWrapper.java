@@ -1,6 +1,7 @@
 package io.jenkins.plugins.elasticjenkins;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.logging.Logger;
@@ -20,13 +21,33 @@ import hudson.model.TaskListener;
 import hudson.tasks.BuildWrapperDescriptor;
 import jenkins.tasks.SimpleBuildWrapper;
 
+import javax.annotation.Nullable;
 
-public class ElasticJenkinsWrapper extends SimpleBuildWrapper {
+
+public class ElasticJenkinsWrapper extends SimpleBuildWrapper implements Serializable {
 
 	private static final Logger LOGGER = Logger.getLogger(ElasticJenkins.class.getName());
-	
+
+	public boolean pipeline;
+
+	public String getStepName() {
+		return stepName;
+	}
+
+	public void setStepName(String stepName) {
+		this.stepName = stepName;
+	}
+
+	public String stepName;
+
 	@DataBoundConstructor
-	public ElasticJenkinsWrapper(){}
+	public ElasticJenkinsWrapper(@Nullable String stepName){
+		if(stepName != null) {
+			this.pipeline = true;
+		}else{
+			this.pipeline = false;
+		}
+	}
 
 	@Extension
 	public static final class DescriptorImpl extends BuildWrapperDescriptor {
@@ -47,7 +68,7 @@ public class ElasticJenkinsWrapper extends SimpleBuildWrapper {
 		
 	}
 
-	public static final class DisposerImpl extends Disposer {
+	public class DisposerImpl extends Disposer {
 		public String id;
 		public String projectId;
 
@@ -75,7 +96,7 @@ public class ElasticJenkinsWrapper extends SimpleBuildWrapper {
 
         @Override
         public void tearDown(Run<?, ?> build, FilePath workspace, Launcher launcher, TaskListener listener) throws IOException, InterruptedException {
-            if(build instanceof Run){
+            if(build instanceof Run && pipeline == false){
                 //Update the status of the build and add the log output
 				LOGGER.log(Level.INFO,"Elasticsearch plugin build tearDown disposerImpl");
 				LOGGER.log(Level.INFO,"Id:"+id);

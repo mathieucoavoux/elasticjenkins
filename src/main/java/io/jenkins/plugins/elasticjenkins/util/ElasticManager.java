@@ -113,7 +113,7 @@ public class ElasticManager {
         //If we can save the build we can remove the dequeued item
         String queueUri = url+"/"+jenkinsQueueIndex+"/"+jenkinsQueueType+"/"+build.getQueueId()+"_"+projectId+"_"+ElasticJenkinsUtil.getCurentMasterId();
         if(elasticSearchId != null)
-            if(! ElasticJenkinsUtil.elasticDelete(queueUri))
+            if(isItemExists(queueUri) && ! ElasticJenkinsUtil.elasticDelete(queueUri))
                 LOGGER.log(Level.SEVERE,"Cannot delete queued item:"+queueUri);
         return elasticSearchId;
     }
@@ -273,6 +273,14 @@ public class ElasticManager {
         }
 
         return listBuilds;
+    }
+
+    protected boolean isItemExists(String url) {
+        Integer code = ElasticJenkinsUtil.elasticHead(url);
+
+        if(code == 200)
+            return true;
+        return false;
     }
 
     /**
