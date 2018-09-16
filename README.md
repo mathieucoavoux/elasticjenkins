@@ -79,6 +79,12 @@ This was our initial designed to keep track of the builds and enqueued operation
 but in different types. Unfortunately, Elasticsearch is not allowing us to do such design in new versions,
 for good reasons.
 
+##### Why not creating a parent-child relation between the build and the log?
+The parent-child relation has the following limitations:
+- The parent and child must be created within the same index
+- The parent and child must be stored within the same shard
+- The join field cannot be used as the SQL join. It has significant performance impact
+
 ## Elasticsearch
 
 We use the REST api to store, retrieve or delete builds. We wanted to use the REST API rather than the SDK for several reasons:
