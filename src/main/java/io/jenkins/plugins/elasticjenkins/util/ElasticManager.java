@@ -4,20 +4,21 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import com.google.gson.reflect.TypeToken;
 import com.jayway.jsonpath.JsonPath;
 
 import hudson.model.*;
 
-import io.jenkins.plugins.elasticjenkins.entity.ElasticMaster;
-import io.jenkins.plugins.elasticjenkins.entity.ElasticsearchResult;
-import io.jenkins.plugins.elasticjenkins.entity.GenericBuild;
-import io.jenkins.plugins.elasticjenkins.entity.Parameters;
+import io.jenkins.plugins.elasticjenkins.entity.*;
 import jenkins.model.Jenkins;
+
+import net.minidev.json.JSONArray;
 import org.kohsuke.stapler.bind.JavaScriptMethod;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.*;
+import java.lang.reflect.Type;
 import java.net.URLEncoder;
 
 import java.nio.file.Files;
@@ -25,6 +26,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -107,7 +109,8 @@ public class ElasticManager {
         String eId = build.getId()+"_"+projectId+"_"+ElasticJenkinsUtil.getCurentMasterId();
         String uri = url+"/"+jenkinsBuildsIndex+"/"+jenkinsBuildsType+"/"+eId;
         String elasticSearchId = null;
-        ElasticsearchResult esr = gson.fromJson(ElasticJenkinsUtil.elasticPost(uri,json),ElasticsearchResult.class);
+        Type elasticsearchResulType = new TypeToken<ElasticsearchResult<GenericBuild>>(){}.getType();
+        ElasticsearchResult esr = gson.fromJson(ElasticJenkinsUtil.elasticPost(uri,json),elasticsearchResulType);
         if (esr.getResult().equals("created") || esr.getResult().equals("updated")) elasticSearchId = esr.get_id();
 
         //If we can save the build we can remove the dequeued item
@@ -150,7 +153,8 @@ public class ElasticManager {
                         gson.toJson(Files.readAllLines(file.toPath()), List.class) +
                         "}";
                 LOGGER.log(Level.FINEST, "URI: {0}, json: {1}", new Object[]{uriLogs, json});
-                ElasticsearchResult esr2 = gson.fromJson(ElasticJenkinsUtil.elasticPost(uriLogs, json), ElasticsearchResult.class);
+                Type elasticsearchResulType = new TypeToken<ElasticsearchResult<GenericBuild>>(){}.getType();
+                ElasticsearchResult esr2 = gson.fromJson(ElasticJenkinsUtil.elasticPost(uriLogs, json), elasticsearchResulType);
                 if (esr2.getResult().equals("created")) logId = esr2.get_id();
                 suffix = typeLog+"/"+indexLogs+"/"+logId;
             }catch (IOException e) {
@@ -172,7 +176,8 @@ public class ElasticManager {
         }
 
         LOGGER.log(Level.FINEST,"Update uri: {0}, json: {1}", new Object[]{uri,json});
-        ElasticsearchResult esr = gson.fromJson(ElasticJenkinsUtil.elasticPost(uri,json),ElasticsearchResult.class);
+        Type elasticsearchResulType = new TypeToken<ElasticsearchResult<GenericBuild>>(){}.getType();
+        ElasticsearchResult esr = gson.fromJson(ElasticJenkinsUtil.elasticPost(uri,json),elasticsearchResulType);
 
         if (esr.getResult().equals("updated")) elasticSearchId = esr.get_id();
 
@@ -194,7 +199,7 @@ public class ElasticManager {
         List<GenericBuild> listBuilds = new ArrayList<>();
         String uri = url+"/"+jenkinsBuildsIndex+"/"+jenkinsBuildsType+"/_search";
 
-        String masters = master;;
+        String masters = master;
         if(viewType.equals("cluster"))
             masters = getNodesByCluster(clusterName);
 
@@ -218,15 +223,11 @@ public class ElasticManager {
 
         String jsonResponse = ElasticJenkinsUtil.elasticPost(uri,json);
 
-        LOGGER.log(Level.FINEST,"jsonResponse:"+jsonResponse);
+        Type elasticsearchArrayResulType = new TypeToken<ElasticsearchArrayResult<GenericBuild>>(){}.getType();
 
-        Integer max = JsonPath.parse(jsonResponse).read("$.hits.hits.length()");
-        for(int i=0;i<max;i++) {
-            LOGGER.log(Level.FINEST,"Index: {0}, content: {1}", new Object[]{i,JsonPath.parse(jsonResponse).read("$.hits.hits["+i+"]._source").toString()});
-            GenericBuild genericBuild =  gson.fromJson(JsonPath.parse(jsonResponse).read(
-                    "$.hits.hits["+i+"]._source").toString(),GenericBuild.class);
-            listBuilds.add(genericBuild);
-        }
+        ElasticsearchArrayResult<GenericBuild> listElasticSearchResult = gson.fromJson(jsonResponse,elasticsearchArrayResulType);
+
+        listElasticSearchResult.getHits().getHits().stream().forEach(e -> listBuilds.add(e.get_source()));
 
         return listBuilds;
     }
@@ -520,7 +521,8 @@ public class ElasticManager {
         String eId = waitingItem.getId()+"_"+projectId+"_"+ElasticJenkinsUtil.getCurentMasterId();;
         String uri = url+"/"+jenkinsQueueIndex+"/"+jenkinsQueueType+"/"+eId;
         String elasticSearchId = null;
-        ElasticsearchResult esr = gson.fromJson(ElasticJenkinsUtil.elasticPost(uri,json),ElasticsearchResult.class);
+        Type elasticsearchResulType = new TypeToken<ElasticsearchResult<GenericBuild>>(){}.getType();
+        ElasticsearchResult esr = gson.fromJson(ElasticJenkinsUtil.elasticPost(uri,json),elasticsearchResulType);
         if (esr.getResult().equals("created") || esr.getResult().equals("updated")) elasticSearchId = esr.get_id();
 
         return elasticSearchId;
@@ -541,8 +543,8 @@ public class ElasticManager {
                 "  }\n" +
                 "}";
 
-
-        ElasticsearchResult esr = gson.fromJson(ElasticJenkinsUtil.elasticPost(uri,json),ElasticsearchResult.class);
+        Type elasticsearchResulType = new TypeToken<ElasticsearchResult<GenericBuild>>(){}.getType();
+        ElasticsearchResult esr = gson.fromJson(ElasticJenkinsUtil.elasticPost(uri,json),elasticsearchResulType);
 
 
     }

@@ -84,7 +84,7 @@ public class ElasticJenkinsAction extends ComputerLauncher implements RunAction2
         ElasticManager elasticManager = new ElasticManager();
         String index = ElasticJenkinsUtil.getHash(project.getUrl().split("/$")[0]);
 
-       return  elasticManager.getPaginateBuildHistory(index, viewType , paginationSize, paginationStart);
+        return elasticManager.getPaginateBuildHistory(index, viewType , paginationSize, paginationStart);
     }
 
 

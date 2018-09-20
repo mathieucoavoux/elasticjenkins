@@ -88,7 +88,7 @@ The parent-child relation has the following limitations:
 ## Elasticsearch
 
 We use the REST api to store, retrieve or delete builds. We wanted to use the REST API rather than the SDK for several reasons:
-* The REST API basic operations doesn't differ between Elasticsearch version
+* The REST API basic operations doesn't differ between Elasticsearch version ( [documentation](https://www.elastic.co/guide/en/elasticsearch/client/java-rest/6.4/java-rest-high-compatibility.html) )and the TransportClient will be deprecated in Elasticsearch 7.0 [documentation](https://www.elastic.co/guide/en/elasticsearch/client/java-api/current/client.html)
 * There is no need to add the Elasticsearch transport which has been changed between some major versions
 * We don't overload the classloader with all Elasticsearch dependencies that can be in conflict with others plugins
 

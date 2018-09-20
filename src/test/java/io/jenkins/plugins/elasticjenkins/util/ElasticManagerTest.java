@@ -143,6 +143,7 @@ public class ElasticManagerTest  {
     @Test
     public void allTests() throws IOException, InterruptedException {
 
+        deleteIndices();
 
         createIndex();
         ElasticJenkinsManagement elasticJenkinsManagement = new ElasticJenkinsManagement();
@@ -181,7 +182,7 @@ public class ElasticManagerTest  {
 
         Run<?,?> build = generateBuild("1");
         ElasticManager em = new ElasticManager();
-        String index = "jenkins_test";
+        String index = "myproject/myserver";
         String type = "builds";
         String idElastic = em.addBuild(index,build);
         assertTrue(idElastic.equals("1_"+index+"_"+master));

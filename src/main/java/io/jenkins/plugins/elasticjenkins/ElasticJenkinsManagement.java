@@ -1,11 +1,14 @@
 package io.jenkins.plugins.elasticjenkins;
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import hudson.Extension;
 import hudson.model.ManagementLink;
 
 import io.jenkins.plugins.elasticjenkins.entity.ElasticMaster;
+import io.jenkins.plugins.elasticjenkins.entity.ElasticsearchArrayResult;
 import io.jenkins.plugins.elasticjenkins.entity.ElasticsearchResult;
+import io.jenkins.plugins.elasticjenkins.entity.GenericBuild;
 import io.jenkins.plugins.elasticjenkins.util.ElasticJenkinsUtil;
 
 import io.jenkins.plugins.elasticjenkins.util.ElasticManager;
@@ -17,6 +20,7 @@ import org.kohsuke.stapler.QueryParameter;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.lang.reflect.Type;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -188,7 +192,8 @@ public class ElasticJenkinsManagement extends ManagementLink {
         em.setHostname(hostname);
         Gson gson = new Gson();
         String json = gson.toJson(em);
-        ElasticsearchResult esr = gson.fromJson(ElasticJenkinsUtil.elasticPost(uri,json),ElasticsearchResult.class);
+        Type elasticsearchResulType = new TypeToken<ElasticsearchResult<GenericBuild>>(){}.getType();
+        ElasticsearchResult esr = gson.fromJson(ElasticJenkinsUtil.elasticPost(uri,json),elasticsearchResulType);
         return esr.get_id() != null ? true : false;
     }
 
