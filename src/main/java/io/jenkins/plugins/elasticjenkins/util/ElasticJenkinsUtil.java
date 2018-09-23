@@ -299,7 +299,7 @@ public class ElasticJenkinsUtil {
                 "\t\"settings\" : {\n" +
                 "\t\t\"index\" : {\n" +
                 "\t\t\t\"number_of_shards\" : 3, \n" +
-                "\t\t\t\"number_of_replicas\" : 2 \n" +
+                "\t\t\t\"number_of_replicas\" : 0 \n" +
                 "\t\t}\n" +
                 "\t},\n" +
                 "\n" +
@@ -310,12 +310,12 @@ public class ElasticJenkinsUtil {
                 "\n" +
                 "            \"startDate\": {\n" +
                 "              \"type\": \"date\",\n" +
-                "              \"format\" : \"yyyy-MM-dd\"\n" +
+                "              \"format\" : \"epoch_millis\"\n" +
                 "\n" +
                 "        },\n" +
                 "        \"endDate\": {\n" +
                 "              \"type\": \"date\",\n" +
-                "              \"format\" : \"yyyy-MM-dd\"\n" +
+                "              \"format\" : \"epoch_millis\"\n" +
                 "\n" +
                 "        },\n" +
                 "        \"id\": {\n" +
@@ -334,7 +334,13 @@ public class ElasticJenkinsUtil {
                 "          \"type\" : \"keyword\"\n" +
                 "        },\n" +
                 "        \"jenkinsMasterName\" : {\n" +
-                "          \"type\" : \"keyword\"\n" +
+                "          \"type\" : \"text\",\n" +
+                "           \"fields\" : {\n" +
+                "               \"keyword\" : {\n" +
+                "                   \"type\" : \"keyword\",\n"+
+                "                   \"ignore_above\" : 256\n"+
+                "               }\n" +
+                "           }\n" +
                 "        },\n" +
                 "        \"projectId\" : {\n" +
                 "          \"type\" : \"keyword\"\n" +
@@ -362,7 +368,8 @@ public class ElasticJenkinsUtil {
                 "}";
         ElasticJenkinsUtil.elasticPut(uri,json);
         ElasticJenkinsUtil.elasticPut(uri2,json);
-        ElasticJenkinsUtil.elasticPut(uriBuilds,mappingBuilds);
+        //ElasticJenkinsUtil.elasticPut(uriBuilds,mappingBuilds);
+        ElasticJenkinsUtil.elasticPut(uriBuilds,uri);
         ElasticJenkinsUtil.elasticPut(uriQueues,json);
     }
 
