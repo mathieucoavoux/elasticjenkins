@@ -68,6 +68,7 @@ public class ElasticManager {
         //We set build values in a generic build to avoid to serialize unnecessary values
         GenericBuild genericBuild = new GenericBuild();
         genericBuild.setName(ElasticJenkinsUtil.convertUrlToFullName(build.getUrl()));
+        genericBuild.setUrl(build.getParent().getUrl());
         genericBuild.setId(build.getId());
         genericBuild.setStartDate(System.currentTimeMillis());
 

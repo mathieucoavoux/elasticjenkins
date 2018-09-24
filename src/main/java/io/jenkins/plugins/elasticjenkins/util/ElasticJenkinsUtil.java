@@ -302,27 +302,25 @@ public class ElasticJenkinsUtil {
                 "\t\t\t\"number_of_replicas\" : 0 \n" +
                 "\t\t}\n" +
                 "\t},\n" +
-                "\n" +
-                "\t\n" +
                 "  \"mappings\": {\n" +
                 "    \"builds\": {\n" +
                 "      \"properties\": {\n" +
-                "\n" +
                 "            \"startDate\": {\n" +
                 "              \"type\": \"date\",\n" +
                 "              \"format\" : \"epoch_millis\"\n" +
-                "\n" +
                 "        },\n" +
                 "        \"endDate\": {\n" +
                 "              \"type\": \"date\",\n" +
                 "              \"format\" : \"epoch_millis\"\n" +
-                "\n" +
                 "        },\n" +
                 "        \"id\": {\n" +
                 "          \"type\": \"keyword\"\n" +
                 "        },\n" +
                 "        \"name\": {\n" +
                 "          \"type\": \"keyword\"\n" +
+                "        },\n" +
+                "       \"url\" : {\n" +
+                "           \"type\" : \"keyword\"\n" +
                 "        },\n" +
                 "        \"queuedSince\" : {\n" +
                 "          \"type\" : \"long\"\n" +
@@ -364,11 +362,9 @@ public class ElasticJenkinsUtil {
                 "      }\n" +
                 "    }\n" +
                 "  }\n" +
-                "\n" +
                 "}";
-        ElasticJenkinsUtil.elasticPut(uri,json);
         ElasticJenkinsUtil.elasticPut(uri2,json);
-        //ElasticJenkinsUtil.elasticPut(uriBuilds,mappingBuilds);
+        ElasticJenkinsUtil.elasticPut(uriBuilds,mappingBuilds);
         ElasticJenkinsUtil.elasticPut(uriBuilds,uri);
         ElasticJenkinsUtil.elasticPut(uriQueues,json);
     }

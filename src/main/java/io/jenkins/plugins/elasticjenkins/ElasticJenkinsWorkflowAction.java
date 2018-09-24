@@ -57,7 +57,7 @@ public class ElasticJenkinsWorkflowAction implements Action {
     @CheckForNull
     @Override
     public String getUrlName() {
-        return "ej2";
+        return "ej1";
     }
 
     @Extension
