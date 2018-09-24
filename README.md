@@ -79,10 +79,16 @@ This was our initial designed to keep track of the builds and enqueued operation
 but in different types. Unfortunately, Elasticsearch is not allowing us to do such design in new versions,
 for good reasons.
 
+##### Why not creating a parent-child relation between the build and the log?
+The parent-child relation has the following limitations:
+- The parent and child must be created within the same index
+- The parent and child must be stored within the same shard
+- The join field cannot be used as the SQL join. It has significant performance impact
+
 ## Elasticsearch
 
 We use the REST api to store, retrieve or delete builds. We wanted to use the REST API rather than the SDK for several reasons:
-* The REST API basic operations doesn't differ between Elasticsearch version
+* The REST API basic operations doesn't differ between Elasticsearch version ( [documentation](https://www.elastic.co/guide/en/elasticsearch/client/java-rest/6.4/java-rest-high-compatibility.html) )and the TransportClient will be deprecated in Elasticsearch 7.0 [documentation](https://www.elastic.co/guide/en/elasticsearch/client/java-api/current/client.html)
 * There is no need to add the Elasticsearch transport which has been changed between some major versions
 * We don't overload the classloader with all Elasticsearch dependencies that can be in conflict with others plugins
 

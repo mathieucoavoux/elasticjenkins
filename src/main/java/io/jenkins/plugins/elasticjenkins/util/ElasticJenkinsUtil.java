@@ -295,9 +295,77 @@ public class ElasticJenkinsUtil {
                 "        }\n" +
                 "    }\n" +
                 "}";
-        ElasticJenkinsUtil.elasticPut(uri,json);
+        String mappingBuilds = "{\n" +
+                "\t\"settings\" : {\n" +
+                "\t\t\"index\" : {\n" +
+                "\t\t\t\"number_of_shards\" : 3, \n" +
+                "\t\t\t\"number_of_replicas\" : 0 \n" +
+                "\t\t}\n" +
+                "\t},\n" +
+                "  \"mappings\": {\n" +
+                "    \"builds\": {\n" +
+                "      \"properties\": {\n" +
+                "            \"startDate\": {\n" +
+                "              \"type\": \"date\",\n" +
+                "              \"format\" : \"epoch_millis\"\n" +
+                "        },\n" +
+                "        \"endDate\": {\n" +
+                "              \"type\": \"date\",\n" +
+                "              \"format\" : \"epoch_millis\"\n" +
+                "        },\n" +
+                "        \"id\": {\n" +
+                "          \"type\": \"keyword\"\n" +
+                "        },\n" +
+                "        \"name\": {\n" +
+                "          \"type\": \"keyword\"\n" +
+                "        },\n" +
+                "       \"url\" : {\n" +
+                "           \"type\" : \"keyword\"\n" +
+                "        },\n" +
+                "        \"queuedSince\" : {\n" +
+                "          \"type\" : \"long\"\n" +
+                "        },\n" +
+                "        \"logId\" : {\n" +
+                "          \"type\" : \"text\"\n" +
+                "        },\n" +
+                "        \"status\" : {\n" +
+                "          \"type\" : \"keyword\"\n" +
+                "        },\n" +
+                "        \"jenkinsMasterName\" : {\n" +
+                "          \"type\" : \"text\",\n" +
+                "           \"fields\" : {\n" +
+                "               \"keyword\" : {\n" +
+                "                   \"type\" : \"keyword\",\n"+
+                "                   \"ignore_above\" : 256\n"+
+                "               }\n" +
+                "           }\n" +
+                "        },\n" +
+                "        \"projectId\" : {\n" +
+                "          \"type\" : \"keyword\"\n" +
+                "        },\n" +
+                "        \"launchedByName\" : {\n" +
+                "          \"type\" : \"keyword\"\n" +
+                "        },\n" +
+                "        \"parameters\" : {\n" +
+                "          \"properties\" : {\n" +
+                "            \"name\" : {\n" +
+                "              \"type\" : \"keyword\" \n" +
+                "            },\n" +
+                "            \"value\" : {\n" +
+                "              \"type\" : \"keyword\" \n" +
+                "            },\n" +
+                "            \"description\" : {\n" +
+                "              \"type\" : \"keyword\" \n" +
+                "            }\n" +
+                "          }\n" +
+                "        }\n" +
+                "      }\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
         ElasticJenkinsUtil.elasticPut(uri2,json);
-        ElasticJenkinsUtil.elasticPut(uriBuilds,json);
+        ElasticJenkinsUtil.elasticPut(uriBuilds,mappingBuilds);
+        ElasticJenkinsUtil.elasticPut(uriBuilds,uri);
         ElasticJenkinsUtil.elasticPut(uriQueues,json);
     }
 

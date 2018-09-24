@@ -131,6 +131,21 @@ public class GenericBuild {
     @Nonnull
     protected String executedOn;
 
+    @Nonnull
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(@Nonnull String url) {
+        this.url = url;
+    }
+
+    /**
+     * The URL to access the job. Used in Kibana
+     */
+    @Nonnull
+    protected String url;
+
     public String getId() {
         return id;
     }

@@ -1,5 +1,7 @@
 package io.jenkins.plugins.elasticjenkins.entity;
 
+import java.util.List;
+
 /**
  * This entity is used to parse Eleasticsearch result
  * We have preferred to declare an entity and use the REST API of Elasticsearch here as
@@ -8,7 +10,7 @@ package io.jenkins.plugins.elasticjenkins.entity;
  *      - the Elasticsearch transport Java API is different between versions
  *
  */
-public class ElasticsearchResult {
+public class ElasticsearchResult<T> {
     protected String _index;
 
     protected String _type;
@@ -23,15 +25,17 @@ public class ElasticsearchResult {
 
     protected String _primary_term;
 
-    public Object get_source() {
+
+    public T get_source() {
         return _source;
     }
 
-    public void set_source(Object _source) {
+    public void set_source(T _source) {
         this._source = _source;
     }
 
-    protected Object _source;
+    protected T _source;
+
 
     public String get_index() {
         return _index;
