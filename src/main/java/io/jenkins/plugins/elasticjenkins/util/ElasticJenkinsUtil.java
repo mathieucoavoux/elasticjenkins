@@ -41,6 +41,7 @@ public class ElasticJenkinsUtil {
 
     protected static String charset = ElasticJenkinsUtil.getProperty("elasticCharset");
     protected static String masterName = ElasticJenkinsUtil.getProperty("masterName");
+    protected static String health = ElasticJenkinsUtil.getProperty("jenkinsMappingHealth");
 
     public static String getJenkinsManageIndexCluster() {
         return jenkinsManageIndexCluster;
@@ -74,6 +75,8 @@ public class ElasticJenkinsUtil {
     public static String getUrl() {
         return url;
     }
+
+    public static String getJenkinsHealth() { return health;}
 
     protected static String clusterName = ElasticJenkinsUtil.getProperty("clusterName");
     protected static String url = ElasticJenkinsUtil.getProperty("persistenceStore");
@@ -159,6 +162,10 @@ public class ElasticJenkinsUtil {
 
     public static void setIsEmtpy(boolean newIsEmpty){isEmpty = newIsEmpty;}
 
+    public static void setJenkinsHealth(String newJenkinsIndexHealth) {
+        health = newJenkinsIndexHealth;
+    }
+
     /**
      * Get a property from the elasticjenkins file properties
      * @param property: property to retrieve
@@ -200,6 +207,7 @@ public class ElasticJenkinsUtil {
      * @param queuesIndex: The index use to store the queued items
      * @param clusterIndex: The index of the cluster configuration
      * @param mappingIndex: The index use for the project mapping.
+     * @param mappingHealth: The index use for the health
      * @return: boolean true if saved successfully
      */
     public static synchronized boolean writeProperties(@Nonnull String masterName,
@@ -207,7 +215,7 @@ public class ElasticJenkinsUtil {
                                                        @Nonnull String persistenceStore, @Nonnull String charset,
                                                        @Nonnull String logIndex, @Nonnull String buildsIndex,
                                                        @Nonnull String queuesIndex,
-                                                       @Nonnull String clusterIndex, @Nonnull String mappingIndex) {
+                                                       @Nonnull String clusterIndex, @Nonnull String mappingIndex, @Nonnull String mappingHealth) {
         OutputStream out = null;
 
         setCharset(charset);
@@ -219,7 +227,9 @@ public class ElasticJenkinsUtil {
         setJenkinsManageIndexCluster(clusterIndex);
         setJenkinsManageIndexMapping(mappingIndex);
         setIsInitialized(true);
+        setJenkinsHealth(mappingHealth);
         createManageIndex();
+        createHealthIndex();
         Properties props = new Properties();
         props.setProperty("masterName", masterName);
         props.setProperty("clusterName",clusterName);
@@ -230,6 +240,7 @@ public class ElasticJenkinsUtil {
         props.setProperty("jenkinsQueuesIndex",queuesIndex);
         props.setProperty("jenkinsManageClusterIndex",clusterIndex);
         props.setProperty("jenkinsManageMappingIndex",mappingIndex);
+        props.setProperty("jenkinsMappingHealth",mappingHealth);
         try {
             out = new FileOutputStream(propertiesFile);
             BufferedWriter writer = new BufferedWriter(new FileWriter(propertiesFile.getPath(), false));
@@ -313,6 +324,10 @@ public class ElasticJenkinsUtil {
                 "              \"type\": \"date\",\n" +
                 "              \"format\" : \"epoch_millis\"\n" +
                 "        },\n" +
+                "            \"startupTime\": {\n" +
+                "              \"type\": \"date\",\n" +
+                "              \"format\" : \"epoch_millis\"\n" +
+                "            },\n" +
                 "        \"id\": {\n" +
                 "          \"type\": \"keyword\"\n" +
                 "        },\n" +
@@ -367,6 +382,42 @@ public class ElasticJenkinsUtil {
         ElasticJenkinsUtil.elasticPut(uriBuilds,mappingBuilds);
         ElasticJenkinsUtil.elasticPut(uriBuilds,uri);
         ElasticJenkinsUtil.elasticPut(uriQueues,json);
+    }
+
+    public static void createHealthIndex() {
+        String uri = url+"/"+health;
+        String json = "{\n" +
+        "\t\"settings\" : {\n" +
+                "\t\t\"index\" : {\n" +
+                "\t\t\t\"number_of_shards\" : 3, \n" +
+                "\t\t\t\"number_of_replicas\" : 0 \n" +
+                "\t\t}\n" +
+                "\t},\n" +
+                "  \"mappings\": {\n" +
+                "    \"health\": {\n" +
+                "      \"properties\": {\n" +
+                "            \"startupTime\": {\n" +
+                "              \"type\": \"date\",\n" +
+                "              \"format\" : \"epoch_millis\"\n" +
+                "            },\n" +
+                "             \"jenkinsMasterName\" : {\n" +
+                "                   \"type\" : \"keyword\"\n" +
+                "            },\n" +
+                "             \"lastFlag\" : {\n" +
+                "               \"type\": \"date\",\n" +
+                "              \"format\" : \"epoch_millis\"\n" +
+                "            },\n" +
+                "             \"recoverBy\" : {\n" +
+                "                   \"type\" : \"keyword\"\n" +
+                "            },\n" +
+                "             \"recoverStatus\" : {\n" +
+                "                   \"type\" : \"keyword\"\n" +
+                "            }\n" +
+                "          }\n" +
+                "        }\n" +
+                "      }\n" +
+                "    }";
+        ElasticJenkinsUtil.elasticPut(uri,json);
     }
 
     public static boolean isInitialized() {
@@ -434,7 +485,9 @@ public class ElasticJenkinsUtil {
                 LOGGER.log(Level.WARNING,"Cannot close the connection");
             }
         }
-
+        LOGGER.log(Level.INFO,"Uri:"+uri);
+        LOGGER.log(Level.INFO,"Json:"+json);
+        LOGGER.log(Level.INFO,"Response:"+result);
         return result;
     }
 
@@ -462,6 +515,8 @@ public class ElasticJenkinsUtil {
                 LOGGER.log(Level.WARNING,"Cannot close the connection");
             }
         }
+        LOGGER.log(Level.INFO,"Uri:"+uri);
+        LOGGER.log(Level.INFO,"Response:"+result);
         return result;
     }
 
@@ -493,7 +548,6 @@ public class ElasticJenkinsUtil {
                 LOGGER.log(Level.WARNING,"Cannot close the connection");
             }
         }
-
 
         return result;
     }

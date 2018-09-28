@@ -85,6 +85,21 @@ The parent-child relation has the following limitations:
 - The parent and child must be stored within the same shard
 - The join field cannot be used as the SQL join. It has significant performance impact
 
+### Recovering
+
+A Jenkins master is part of a cluster. If a master fail, others servers within the cluster shall know and take care of the recovery.
+To ensure the self-monitoring of the cluster, each master writes a flag into Elasticsearch.
+If a master doesn't write a flag for 2 minutes we consider this server has down.
+The first server in the cluster which detects the failure will mark its name in the ''recoverBy'' key to inform others nodes that it will be responsible of the recovering
+This server will take the value of the ''startupTime'' and check every ''builds'' with the status '''QUEUED''' and with this ''startupTime'' and with the related ''jenkinsMasterName'' and ''clusterName''.
+Then the server will retry to requeue all items.
+If they are requeued successfully the ''recoverStatus'' will be set to '''COMPLETED''' otherwise it will be marked as '''FAILED'''
+
+#### Healthcheck
+
+Below the process of healthcheck:
+![simple-architecture](doc/elasticjenkins_recover_process.png)
+
 ## Elasticsearch
 
 We use the REST api to store, retrieve or delete builds. We wanted to use the REST API rather than the SDK for several reasons:

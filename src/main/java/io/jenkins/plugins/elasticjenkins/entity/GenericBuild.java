@@ -5,6 +5,7 @@ package io.jenkins.plugins.elasticjenkins.entity;
 import hudson.console.AnnotatedLargeText;
 
 import hudson.model.Job;
+import hudson.model.ParametersAction;
 import hudson.model.Run;
 import jenkins.model.Jenkins;
 import org.apache.commons.jelly.XMLOutput;
@@ -43,6 +44,17 @@ public class GenericBuild {
     @Nullable
     protected Long endDate;
 
+    @Nonnull
+    protected Long startupTime;
+
+    public Long getStartupTime() {
+        return startupTime;
+    }
+
+    public void setStartupTime(Long startupTime) {
+        this.startupTime = startupTime;
+    }
+
 
     @Nullable
     public Long getQueuedSince() {
@@ -61,7 +73,7 @@ public class GenericBuild {
      * Parameters set for the built
      */
     @Nullable
-    protected List<Parameters> parameters;
+    protected List<ParametersAction> parameters;
 
     /**
      * Log output of the job
@@ -178,11 +190,11 @@ public class GenericBuild {
         this.endDate = endDate;
     }
 
-    public List<Parameters> getParameters() {
+    public List<ParametersAction> getParameters() {
         return parameters;
     }
 
-    public void setParameters(List<Parameters> parameters) {
+    public void setParametersAction(List<ParametersAction> parameters) {
         this.parameters = parameters;
     }
 

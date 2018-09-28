@@ -1,7 +1,5 @@
 package io.jenkins.plugins.elasticjenkins;
 
-import io.jenkins.plugins.elasticjenkins.entity.ElasticMaster;
-import io.jenkins.plugins.elasticjenkins.util.ElasticJenkinsUtil;
 import io.jenkins.plugins.elasticjenkins.util.ElasticManager;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
@@ -10,7 +8,6 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
-import org.kohsuke.stapler.HttpRedirect;
 import org.kohsuke.stapler.HttpResponse;
 
 import java.io.IOException;
@@ -30,6 +27,7 @@ public class ElasticJenkinsManagementTest {
     public String queueIndex = "jenkins_queues";
     public static String jenkinsManageIndexCluster = "jenkins_manage_clusters";
     public static String jenkinsManageIndexMapping = "jenkins_manage_mapping";
+    public static String jenkinsManageHealth = "jenkins_manage_health";
     public static String jenkinsManageType = "clusters";
 
     @Rule
@@ -47,7 +45,7 @@ public class ElasticJenkinsManagementTest {
     @Test
     public void testDoConfigure() throws IllegalAccessException, NoSuchFieldException, IOException, InterruptedException {
         ElasticJenkinsManagement elasticJenkinsManagement = new ElasticJenkinsManagement();
-        HttpResponse responseOK = elasticJenkinsManagement.doConfigure(master,url,"UTF-8",clusterName,indexLog,buildsIndex,queueIndex,false,jenkinsManageIndexCluster,jenkinsManageIndexMapping);
+        HttpResponse responseOK = elasticJenkinsManagement.doConfigure(master,url,"UTF-8",clusterName,indexLog,buildsIndex,queueIndex,false,jenkinsManageIndexCluster,jenkinsManageIndexMapping, jenkinsManageHealth);
         //Check response
         Field statusCodeField = responseOK.getClass().getDeclaredField("statusCode");
         statusCodeField.setAccessible(true);

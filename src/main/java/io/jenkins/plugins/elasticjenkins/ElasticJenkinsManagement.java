@@ -6,7 +6,6 @@ import hudson.Extension;
 import hudson.model.ManagementLink;
 
 import io.jenkins.plugins.elasticjenkins.entity.ElasticMaster;
-import io.jenkins.plugins.elasticjenkins.entity.ElasticsearchArrayResult;
 import io.jenkins.plugins.elasticjenkins.entity.ElasticsearchResult;
 import io.jenkins.plugins.elasticjenkins.entity.GenericBuild;
 import io.jenkins.plugins.elasticjenkins.util.ElasticJenkinsUtil;
@@ -108,6 +107,12 @@ public class ElasticJenkinsManagement extends ManagementLink {
         String jenkinsManageMappingIndex = ElasticJenkinsUtil.getJenkinsManageIndexMapping();
         return jenkinsManageMappingIndex == null ? "jenkins_manage_mapping" : jenkinsManageMappingIndex;
     }
+
+    public String getJenkinsManageHealth() {
+        String jenkinsManageHealth = ElasticJenkinsUtil.getJenkinsHealth();
+        return jenkinsManageHealth == null ? "jenkins_manage_health" : jenkinsManageHealth;
+    }
+
     public String getClusterName() {
         return ElasticJenkinsUtil.getClusterName();
     }
@@ -117,24 +122,25 @@ public class ElasticJenkinsManagement extends ManagementLink {
      * If the fields are empty the method returns badParams.
      * If the Elasticsearch status is different from "green" or "yellow" the method returns badStatus.
      * If the properties file cannot be written the method returns error otherwise saved
-     * @param masterName: Jenkins master name
-     * @param persistenceStore: Url of the persistence store
-     * @param charset: charset used for the log output
-     * @param clusterName: The name of the cluster which this server will join. This will allow to see builds from other members
-     * @param jenkinsLogs: The index use to store the log output
-     * @param jenkinsBuilds: The index use to store the builds
-     * @param jenkinsQueues: The index use to store the queued items
-     * @param forceCreation: If set to true we force to save the new node configuration in Elasticsearch even if it exists
+     * @param masterName : Jenkins master name
+     * @param persistenceStore : Url of the persistence store
+     * @param charset : charset used for the log output
+     * @param clusterName : The name of the cluster which this server will join. This will allow to see builds from other members
+     * @param jenkinsLogs : The index use to store the log output
+     * @param jenkinsBuilds : The index use to store the builds
+     * @param jenkinsQueues : The index use to store the queued items
+     * @param forceCreation : If set to true we force to save the new node configuration in Elasticsearch even if it exists
      *                     otherwise it will fail.
-     * @param jenkinsClusterIndex: The index of the cluster configuration
-     * @param jenkinsManageIndex: The index use for the project mapping.
+     * @param jenkinsClusterIndex : The index of the cluster configuration
+     * @param jenkinsManageIndex : The index use for the project mapping.
+     * @param jenkinsManageHealth: The index use for the health check
      * @return: response if the configuration has been saved successfully or not
      */
     public HttpResponse doConfigure(@QueryParameter String masterName, @QueryParameter String persistenceStore,
                                     @QueryParameter String charset, @QueryParameter String clusterName,
                                     @QueryParameter String jenkinsLogs, @QueryParameter String jenkinsBuilds,
                                     @QueryParameter String jenkinsQueues, @QueryParameter boolean forceCreation,
-                                    @QueryParameter String jenkinsClusterIndex,@QueryParameter String jenkinsManageIndex) {
+                                    @QueryParameter String jenkinsClusterIndex, @QueryParameter String jenkinsManageIndex,@QueryParameter String jenkinsManageHealth) {
         //Check if the form is filled correctly
         if(masterName == null || masterName.isEmpty() || persistenceStore == null || masterName.isEmpty()
                 || charset == null || charset.isEmpty() ||
@@ -158,7 +164,7 @@ public class ElasticJenkinsManagement extends ManagementLink {
 
 
         if(!ElasticJenkinsUtil.writeProperties(masterName,clusterName , persistenceStore,charset,jenkinsLogs,jenkinsBuilds,
-                jenkinsQueues,jenkinsClusterIndex,jenkinsManageIndex ))
+                jenkinsQueues,jenkinsClusterIndex,jenkinsManageIndex, jenkinsManageHealth))
             return HttpResponses.redirectTo(".?error");
 
         //Check if the master exist already

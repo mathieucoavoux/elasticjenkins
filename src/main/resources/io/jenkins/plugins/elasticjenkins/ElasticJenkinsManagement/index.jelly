@@ -48,9 +48,9 @@
       		<strong>Error</strong> Settings can not be saved. Please check log.
       	</div>
     </j:if>
-    <j:if test="${request.hasParameter('redirect')}">
+    <j:if test="${request.hasParameter('exists')}">
       	<div class="notification notification-danger">
-      		<strong>Error</strong> Please fill the form correctly.
+      		<strong>Error</strong> The server exists already. Please select force creation if you want to overwrite this server.
       	</div>
     </j:if>
     <f:form method="post" name="config" action="configure" >
@@ -71,6 +71,8 @@
             <j:set var="jenkinsClusterIndex" value="${it.getJenkinsClusterIndex()}" />
 
             <j:set var="jenkinsManageIndex" value="${it.getJenkinsManageIndex()}" />
+
+            <j:set var="jenkinsManageHealth" value="${it.getJenkinsManageHealth()}" />
 
         	<f:entry title="Jenkins master name:" class="form-check-label">
     			<f:textbox name="masterName" class="form-input" default="${masterName}"/>
@@ -109,6 +111,12 @@
                 <f:textbox name="jenkinsManageIndex" class="form-input" default="${jenkinsManageIndex}"/>
             </f:entry>
 
+            <f:entry title="Index name of the healthcheck:" class="form-check-label">
+                <f:textbox name="jenkinsManageHealth" class="form-input" default="${jenkinsManageHealth}"/>
+            </f:entry>
+
+            <f:optionalBlock name="forceCreation" title="Force creation">
+            </f:optionalBlock>
         	<f:entry title="">
           		<f:submit value="Save" />
           	</f:entry>

@@ -31,6 +31,7 @@ public class ElasticJenkinsUtilTest {
     public static String queueIndex = "jenkins_queues";
     public static String clusterIndex = "jenkins_manage_clusters";
     public static String mappingIndex = "jenkins_manage_mapping";
+    public static String mappingHealth = "jenkins_manage_health";
 
     @Rule
     public JenkinsRule j = new JenkinsRule();
@@ -64,7 +65,7 @@ public class ElasticJenkinsUtilTest {
 
     @Before
     public void setUp() throws IOException, InterruptedException {
-        ElasticJenkinsUtil.writeProperties(master,clusterName , url,"UTF-8",indexLog,buildsIndex,queueIndex,clusterIndex,mappingIndex );
+        ElasticJenkinsUtil.writeProperties(master,clusterName , url,"UTF-8",indexLog,buildsIndex,queueIndex,clusterIndex,mappingIndex,mappingHealth );
 
     }
 
