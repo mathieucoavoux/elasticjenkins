@@ -18,12 +18,14 @@ public class ElasticJenkinsStarter extends ComputerListener {
 
     private static final Logger LOGGER = Logger.getLogger(ElasticJenkinsStarter.class.getName());
 
-    public static final Long startupTime = System.currentTimeMillis();
 
     protected ElasticManager elasticManager = new ElasticManager();
 
     public ElasticJenkinsStarter() {
-        LOGGER.log(Level.INFO,"Starting the starter:"+startupTime);
+        //Need to store the value into a variable otherwise when getStartupTime will be called it will call the currentTimeMillis again
+        Long currentTime = System.currentTimeMillis();
+        ElasticJenkinsUtil.setStartupTime(currentTime);
+        LOGGER.log(Level.INFO,"Startup time:"+currentTime);
         //Check if the properties is configured already
         if (ElasticJenkinsUtil.getMasterName() == null || ElasticJenkinsUtil.getClusterName() == null ) {
             LOGGER.log(Level.WARNING,"ElasticJenkins is not defined yet. Please configure it and restart the server");

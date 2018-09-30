@@ -2,9 +2,10 @@ package io.jenkins.plugins.elasticjenkins.util;
 
 
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.google.gson.*;
 import com.jayway.jsonpath.JsonPath;
+import hudson.model.ParameterValue;
+import hudson.model.StringParameterValue;
 import io.jenkins.plugins.elasticjenkins.entity.GenericBuild;
 import jenkins.model.Jenkins;
 import org.apache.http.client.methods.*;
@@ -16,6 +17,7 @@ import org.apache.http.util.EntityUtils;
 import javax.annotation.Nonnull;
 import javax.xml.bind.DatatypeConverter;
 import java.io.*;
+import java.lang.reflect.Type;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
@@ -42,6 +44,16 @@ public class ElasticJenkinsUtil {
     protected static String charset = ElasticJenkinsUtil.getProperty("elasticCharset");
     protected static String masterName = ElasticJenkinsUtil.getProperty("masterName");
     protected static String health = ElasticJenkinsUtil.getProperty("jenkinsMappingHealth");
+
+    public static Long getStartupTime() {
+        return startupTime;
+    }
+
+    public static void setStartupTime(Long startupTime) {
+        ElasticJenkinsUtil.startupTime = startupTime;
+    }
+
+    protected static Long startupTime;
 
     public static String getJenkinsManageIndexCluster() {
         return jenkinsManageIndexCluster;
@@ -485,9 +497,6 @@ public class ElasticJenkinsUtil {
                 LOGGER.log(Level.WARNING,"Cannot close the connection");
             }
         }
-        LOGGER.log(Level.INFO,"Uri:"+uri);
-        LOGGER.log(Level.INFO,"Json:"+json);
-        LOGGER.log(Level.INFO,"Response:"+result);
         return result;
     }
 
@@ -515,8 +524,7 @@ public class ElasticJenkinsUtil {
                 LOGGER.log(Level.WARNING,"Cannot close the connection");
             }
         }
-        LOGGER.log(Level.INFO,"Uri:"+uri);
-        LOGGER.log(Level.INFO,"Response:"+result);
+
         return result;
     }
 
@@ -663,6 +671,17 @@ public class ElasticJenkinsUtil {
     }
 
 
-
+    public static JsonDeserializer<ParameterValue> getPVDeserializer() {
+        return new JsonDeserializer<ParameterValue>() {
+            @Override
+            public ParameterValue deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
+                JsonObject jsonObject = jsonElement.getAsJsonObject();
+                return new StringParameterValue(
+                        jsonObject.get("name").getAsString(),
+                        jsonObject.get("value").getAsString()
+                );
+            }
+        };
+    }
 
 }

@@ -1,5 +1,7 @@
 package io.jenkins.plugins.elasticjenkins.util;
 
+import com.google.gson.Gson;
+import com.jayway.jsonpath.JsonPath;
 import hudson.model.*;
 import io.jenkins.plugins.elasticjenkins.ElasticJenkinsManagement;
 import io.jenkins.plugins.elasticjenkins.entity.GenericBuild;
@@ -18,6 +20,7 @@ import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import static junit.framework.TestCase.assertEquals;
@@ -41,12 +44,12 @@ public class ElasticManagerTest  {
     public static String clusterName = "CLUSTER_NAME";
     public String uniqueId = "20170428";
     public String title = "PROJECT_NAME";
-    public String logIndex = "jenkins_logs";
-    public String buildsIndex = "jenkins_builds";
-    public String queueIndex = "jenkins_queues";
-    public String clusterIndex = "jenkins_manage_clusters";
-    public String mappingIndex = "jenkins_manage_mapping";
-    public String mappingHealth = "jenkins_manage_health";
+    public String logIndex = "test_jenkins_logs";
+    public String buildsIndex = "test_jenkins_builds";
+    public String queueIndex = "test_jenkins_queues";
+    public String clusterIndex = "test_jenkins_manage_clusters";
+    public String mappingIndex = "test_jenkins_manage_mapping";
+    public String mappingHealth = "test_jenkins_manage_health";
 
     public static String url = "http://192.168.44.1:9200";
 
@@ -77,6 +80,7 @@ public class ElasticManagerTest  {
         list.add(queueIndex);
         list.add(clusterIndex);
         list.add(mappingIndex);
+        list.add(mappingHealth);
         for(String uri : list) {
             HttpDelete httpDelete = new HttpDelete(url+"/"+uri);
             httpDelete.setHeader("Accept","application/json");
@@ -147,27 +151,37 @@ public class ElasticManagerTest  {
         deleteIndices();
 
         createIndex();
-        ElasticJenkinsManagement elasticJenkinsManagement = new ElasticJenkinsManagement();
-        elasticJenkinsManagement.addJenkinsMaster(master,clusterName,"TEST_SERVER",master,clusterIndex);
-        Thread.sleep(2000);
+        //ElasticJenkinsManagement elasticJenkinsManagement = new ElasticJenkinsManagement();
+        //elasticJenkinsManagement.addJenkinsMaster(master,clusterName,"TEST_SERVER",master,clusterIndex);
+        //Thread.sleep(2000);
         //Add build
-        addBuild();
+        //addBuild();
 
         //Update build
-        updateBuild();
+        //updateBuild();
 
         //Search by id
-        searchById();
+        //searchById();
 
         //Get pagination
-        testGetPaginateBuildHistory();
+        //testGetPaginateBuildHistory();
 
         //Test add project mapping
         //testAddProjectMapping();
 
         //testFindByParameter();
 
-        testGetProjectId();
+        //testGetProjectId();
+
+        //testAddMasterStartupAndFlag();
+
+        //testGetUnavailableNode();
+
+        //testMarkToRecover();
+
+        //testRecoverBuilds();
+
+        testGetNodesByCluster();
 
         deleteIndices();
 
@@ -176,6 +190,7 @@ public class ElasticManagerTest  {
     public void createIndex() {
         ElasticManager em = new ElasticManager();
         ElasticJenkinsUtil.createManageIndex();
+        ElasticJenkinsUtil.createHealthIndex();
     }
 
 
@@ -303,5 +318,107 @@ public class ElasticManagerTest  {
         Thread.sleep(2000);
         String projectId = elasticManager.getProjectId(hash);
         assertTrue(projectId != null);
+    }
+
+    public void testAddMasterStartupAndFlag() {
+        //Startup time
+        Long startupTime = 1538245515043L;
+        ElasticJenkinsUtil.setStartupTime(startupTime);
+        //Add jenkins startup in the health index
+        ElasticManager elasticManager = new ElasticManager();
+        String id = elasticManager.addMasterStartup();
+        String uri = url + "/" + mappingHealth + "/health/" + id;
+        String json = ElasticJenkinsUtil.elasticGet(uri);
+        String myMaster = JsonPath.parse(json).read("$._source.jenkinsMasterName");
+        assertEquals(master,myMaster);
+    }
+
+
+    public void testGetUnavailableNode() throws InterruptedException {
+        //Add a new jenkins startup
+        Long startupTime = 1538245515044L;
+        ElasticJenkinsUtil.setStartupTime(startupTime);
+        ElasticManager elasticManager = new ElasticManager();
+        String id = elasticManager.addMasterStartup();
+        //Update the health flag to a previous date
+        String uri = url + "/" + mappingHealth + "/health/" + id+"/_update";
+        String json = "{" +
+                        "\"doc\" : {" +
+                            "\"lastFlag\" : 1538245515045" +
+                            "}"+
+                        "}";
+        ElasticJenkinsUtil.elasticPost(uri,json);
+        //Let some time to Elasticsearch to update the entry
+        Thread.sleep(3000);
+        //Check if the master is raised as unavailable
+        List<String> list = elasticManager.getUnavailableNode();
+        assertEquals(1,list.size());
+        assertEquals(id,list.get(0));
+    }
+
+    public void testMarkToRecover() {
+        //Add a new jenkins startup
+        Long startupTime = 1538245515045L;
+        ElasticJenkinsUtil.setStartupTime(startupTime);
+        ElasticManager elasticManager = new ElasticManager();
+        String id = elasticManager.addMasterStartup();
+        List<String> list = new ArrayList<>();
+        list.add(id);
+        Map<String,Boolean> map = elasticManager.markToRecover(list);
+        assertEquals(1,map.size());
+        assertTrue(map.get(id));
+    }
+
+    public void testRecoverBuilds() {
+        //Add a new jenkins startup
+        Long startupTime = 1538245515046L;
+        ElasticJenkinsUtil.setStartupTime(startupTime);
+        ElasticManager elasticManager = new ElasticManager();
+        String id = elasticManager.addMasterStartup();
+        //Add an entry in the manage_cluster
+        String uriCluster = url+"/"+clusterIndex+"/clusters/";
+        String jsonCluster = " {" +
+                            "\"jenkinsMasterName\" : \""+master+"\","+
+                            "\"clusterName\" : \""+clusterName+"\","+
+                            "\"hostname\" : \"MYHOST\""+
+                      "}";
+        String jsonResponseCluster = ElasticJenkinsUtil.elasticPost(uriCluster,jsonCluster);
+        String masterId = JsonPath.parse(jsonResponseCluster).read("$._id");
+        //Create a new GenericBuild
+        GenericBuild genericBuild = new GenericBuild();
+        genericBuild.setId("1");
+        genericBuild.setName("Myproject");
+        genericBuild.setStartupTime(startupTime);
+        genericBuild.setStatus("ENQUEUED");
+        genericBuild.setJenkinsMasterName(master);
+        genericBuild.setJenkinsMasterId(masterId);
+        Gson gson = new Gson();
+        String jsonGeneric = gson.toJson(genericBuild);
+        String uriQueue = url+"/"+queueIndex+"/queues/";
+        //Save this build in the queue index
+        ElasticJenkinsUtil.elasticPost(uriQueue,jsonGeneric);
+        //Recover the build
+        boolean result = elasticManager.recoverBuilds(id);
+        assertTrue(result);
+    }
+
+    public void testGetNodesByCluster() throws InterruptedException {
+        String uri = url+"/"+clusterIndex+"/clusters";
+        String jsonMaster1 = "{"+
+                                "\"jenkinsMasterName\" : \"master1\","+
+                                "\"clusterName\" : \""+clusterName+"\","+
+                                "\"hostname\" : \"server1\""+
+                            "}";
+        String jsonMaster2 = "{"+
+                "\"jenkinsMasterName\" : \"master2\","+
+                "\"clusterName\" : \""+clusterName+"\","+
+                "\"hostname\" : \"server2\""+
+                "}";
+        ElasticJenkinsUtil.elasticPost(uri,jsonMaster1);
+        ElasticJenkinsUtil.elasticPost(uri,jsonMaster2);
+        Thread.sleep(3000);
+        ElasticManager elasticManager = new ElasticManager();
+        String nodesList = elasticManager.getNodesByCluster(clusterName);
+        assertEquals("master1 master2",nodesList);
     }
 }

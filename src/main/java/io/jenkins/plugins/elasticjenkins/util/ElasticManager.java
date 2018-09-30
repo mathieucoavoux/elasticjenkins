@@ -8,6 +8,7 @@ import com.jayway.jsonpath.JsonPath;
 
 import hudson.model.*;
 
+import io.jenkins.plugins.elasticjenkins.ElasticJenkinsRecover;
 import io.jenkins.plugins.elasticjenkins.ElasticJenkinsStarter;
 import io.jenkins.plugins.elasticjenkins.entity.*;
 import jenkins.model.Jenkins;
@@ -53,6 +54,7 @@ public class ElasticManager {
     protected String jenkinsManageIndexMapping = ElasticJenkinsUtil.getJenkinsManageIndexMapping();
     protected String jenkinsManageHealth = ElasticJenkinsUtil.getJenkinsHealth();
     protected Gson gson = new GsonBuilder().create();
+    protected Gson gsonGenericBuild = new GsonBuilder().registerTypeAdapter(ParameterValue.class,ElasticJenkinsUtil.getPVDeserializer()).create();
 
     /**
      * Add a build to Elasticsearch. The status, log id and completion time is update at the end of the build
@@ -72,8 +74,8 @@ public class ElasticManager {
         genericBuild.setUrl(build.getParent().getUrl());
         genericBuild.setId(build.getId());
         genericBuild.setStartDate(System.currentTimeMillis());
-        genericBuild.setStartupTime(ElasticJenkinsStarter.startupTime);
-        LOGGER.log(Level.INFO,"Startuptime: "+ElasticJenkinsStarter.startupTime);
+        genericBuild.setStartupTime(ElasticJenkinsUtil.getStartupTime());
+
         List<ParametersAction> parametersActions = build.getActions(ParametersAction.class);
         if(parametersActions.size() > 0) {
             List<Parameters> listParameters = new ArrayList<>();
@@ -225,27 +227,13 @@ public class ElasticManager {
 
 
         String jsonResponse = ElasticJenkinsUtil.elasticPost(uri,json);
-        JsonDeserializer<ParameterValue> deserializer = new JsonDeserializer<ParameterValue>() {
-            @Override
-            public ParameterValue deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
-                JsonObject jsonObject = jsonElement.getAsJsonObject();
-                return new StringParameterValue(
-                        jsonObject.get("name").getAsString(),
-                        jsonObject.get("value").getAsString()
-                );
-            }
-        };
 
-        Gson gson2 = new GsonBuilder().registerTypeAdapter(ParameterValue.class,deserializer).create();
         Type elasticsearchArrayResulType = new TypeToken<ElasticsearchArrayResult<GenericBuild>>(){}.getType();
 
-        ElasticsearchArrayResult<GenericBuild> listElasticSearchResult = gson2.fromJson(jsonResponse,elasticsearchArrayResulType);
+        ElasticsearchArrayResult<GenericBuild> listElasticSearchResult = gsonGenericBuild.fromJson(jsonResponse,elasticsearchArrayResulType);
 
         listElasticSearchResult.getHits().getHits().stream().forEach(e -> listBuilds.add(e.get_source()));
 
-        ParameterValue pv = listBuilds.get(0).getParameters().get(0).getParameters().get(0);
-        LOGGER.log(Level.INFO,"Name:"+pv.getName());
-        LOGGER.log(Level.INFO,"Value:"+pv.getValue());
         return listBuilds;
     }
 
@@ -283,12 +271,11 @@ public class ElasticManager {
         }catch(Exception e){
                 LOGGER.log(Level.FINEST,"ERROR, jsonResponse:"+jsonResponse);
             }
-        for(int i=0;i<max;i++) {
-            LOGGER.log(Level.FINEST,"Index: {0}, content: {1}", new Object[]{i,JsonPath.parse(jsonResponse).read("$.hits.hits["+i+"]._source").toString()});
-            GenericBuild genericBuild =  gson.fromJson(JsonPath.parse(jsonResponse).read(
-                    "$.hits.hits["+i+"]._source").toString(),GenericBuild.class);
-            listBuilds.add(genericBuild);
-        }
+        Type elasticsearchArrayResulType = new TypeToken<ElasticsearchArrayResult<GenericBuild>>(){}.getType();
+
+        ElasticsearchArrayResult<GenericBuild> listElasticSearchResult = gsonGenericBuild.fromJson(jsonResponse,elasticsearchArrayResulType);
+
+        listElasticSearchResult.getHits().getHits().stream().forEach(e -> listBuilds.add(e.get_source()));
 
         return listBuilds;
     }
@@ -361,7 +348,7 @@ public class ElasticManager {
         String uri = url+"/"+jenkinsManageIndexCluster+"/"+ jenkinsManageClusters +"/_search";
         String json = "{ \"query\" : { \n" +
                 " \"bool\" : {\n" +
-                " \"should\" : [\n" +
+                " \"must\" : [\n" +
                 "     { \"match\" : { \"jenkinsMasterName\" : \""+masterName+"\" }},\n" +
                 "     { \"match\" : { \"clusterName\": \""+clusterName+"\"}}\n" +
                 "     ]\n" +
@@ -372,12 +359,12 @@ public class ElasticManager {
         String jsonResponse = ElasticJenkinsUtil.elasticPost(uri,json);
 
         Integer total = JsonPath.parse(jsonResponse).read("$.hits.total");
-        for(int i=0;i<total;i++) {
 
-            String id  =  gson.fromJson(JsonPath.parse(jsonResponse).read(
-                    "$.hits.hits["+i+"]._id").toString(),String.class);
-            listIds.add(id);
-        }
+        Type elasticsearchArrayResulType = new TypeToken<ElasticsearchArrayResult<GenericBuild>>(){}.getType();
+
+        ElasticsearchArrayResult<GenericBuild> listElasticSearchResult = gsonGenericBuild.fromJson(jsonResponse,elasticsearchArrayResulType);
+
+        listElasticSearchResult.getHits().getHits().stream().forEach(e -> listIds.add(e.get_id()));
 
         return listIds;
     }
@@ -391,25 +378,35 @@ public class ElasticManager {
         String uri = url+"/"+jenkinsManageIndexCluster+"/"+ jenkinsManageClusters +"/_search";
         String json = "{ \"query\" : { \n" +
                 " \"bool\" : {\n" +
-                " \"should\" : [\n" +
+                " \"must\" : [\n" +
                 "     { \"match\" : { \"clusterName\": \""+clusterName+"\"}}\n" +
                 "     ]\n" +
                 "}\n" +
-                "}\n" +
+                "},\n" +
+                " \"size\" : 1000,\n" +
+                " \"from\" : 0\n" +
                 "}";
 
         String jsonResponse = ElasticJenkinsUtil.elasticPost(uri,json);
         Integer total = JsonPath.parse(jsonResponse).read("$.hits.total");
         String result = null;
-        for(int i=0;i<total;i++) {
-            String masterName  =  gson.fromJson(JsonPath.parse(jsonResponse).read(
-                    "$.hits.hits["+i+"]._source.jenkinsMasterName").toString(),String.class);
-            if(result == null)
-                result = masterName;
-            else
-                result = result.concat(" "+masterName);
+
+        List<String> listResults = new ArrayList<>();
+        Type elasticsearchArrayResulType = new TypeToken<ElasticsearchArrayResult<GenericBuild>>(){}.getType();
+
+        ElasticsearchArrayResult<GenericBuild> listElasticSearchResult = gsonGenericBuild.fromJson(jsonResponse,elasticsearchArrayResulType);
+
+        listElasticSearchResult.getHits().getHits().stream().forEach(e -> listResults.add(e.get_source().getJenkinsMasterName()));
+
+        String masterName = null;
+
+        if(listResults.size() > 0)
+            masterName = listResults.get(0);
+        for(int i=1;i<total;i++) {
+            masterName = masterName.concat(" "+listResults.get(i));
         }
-        return result;
+
+        return masterName;
     }
 
     /**
@@ -482,12 +479,11 @@ public class ElasticManager {
         LOGGER.log(Level.FINEST,"jsonResponse:"+jsonResponse);
         Integer max = JsonPath.parse(jsonResponse).read("$.hits.hits.length()");
 
-        for(int i=0;i<max;i++) {
-            LOGGER.log(Level.FINEST,"Index: {0}, content: {1}", new Object[]{i,JsonPath.parse(jsonResponse).read("$.hits.hits["+i+"]._source").toString()});
-            GenericBuild genericBuild =  gson.fromJson(JsonPath.parse(jsonResponse).read(
-                    "$.hits.hits["+i+"]._source").toString(),GenericBuild.class);
-            listBuilds.add(genericBuild);
-        }
+        Type elasticsearchArrayResulType = new TypeToken<ElasticsearchArrayResult<GenericBuild>>(){}.getType();
+
+        ElasticsearchArrayResult<GenericBuild> listElasticSearchResult = gsonGenericBuild.fromJson(jsonResponse,elasticsearchArrayResulType);
+
+        listElasticSearchResult.getHits().getHits().stream().forEach(e -> listBuilds.add(e.get_source()));
 
         return listBuilds;
     }
@@ -520,8 +516,7 @@ public class ElasticManager {
         genericBuild.setParametersAction(parametersActions);
         genericBuild.setQueuedSince(waitingItem.getInQueueSince());
         genericBuild.setJenkinsMasterName(master);
-        genericBuild.setStartupTime(ElasticJenkinsStarter.startupTime);
-        LOGGER.log(Level.INFO,"********************Startup:"+ElasticJenkinsStarter.startupTime);
+        genericBuild.setStartupTime(ElasticJenkinsUtil.getStartupTime());
         genericBuild.setJenkinsMasterName(master);
         genericBuild.setJenkinsMasterId(ElasticJenkinsUtil.getCurentMasterId());
 
@@ -622,11 +617,12 @@ public class ElasticManager {
         String jsonResponse = ElasticJenkinsUtil.elasticPost(uri,jsonReq);
         Integer max = JsonPath.parse(jsonResponse).read("$.hits.hits.length()");
 
-        for(int i=0;i<max;i++) {
-            GenericBuild genericBuild =  gson.fromJson(JsonPath.parse(jsonResponse).read(
-                    "$.hits.hits["+i+"]._source").toString(),GenericBuild.class);
-            listBuilds.add(genericBuild);
-        }
+        Type elasticsearchArrayResulType = new TypeToken<ElasticsearchArrayResult<GenericBuild>>(){}.getType();
+
+        ElasticsearchArrayResult<GenericBuild> listElasticSearchResult = gsonGenericBuild.fromJson(jsonResponse,elasticsearchArrayResulType);
+
+        listElasticSearchResult.getHits().getHits().stream().forEach(e -> listBuilds.add(e.get_source()));
+
 
         return listBuilds;
     }
@@ -655,11 +651,11 @@ public class ElasticManager {
         String jsonResponse = ElasticJenkinsUtil.elasticPost(uri,jsonReq);
         Integer max = JsonPath.parse(jsonResponse).read("$.hits.hits.length()");
 
-        for(int i=0;i<max;i++) {
-            GenericBuild genericBuild =  gson.fromJson(JsonPath.parse(jsonResponse).read(
-                    "$.hits.hits["+i+"]._source").toString(),GenericBuild.class);
-            listBuilds.add(genericBuild);
-        }
+        Type elasticsearchArrayResulType = new TypeToken<ElasticsearchArrayResult<GenericBuild>>(){}.getType();
+
+        ElasticsearchArrayResult<GenericBuild> listElasticSearchResult = gsonGenericBuild.fromJson(jsonResponse,elasticsearchArrayResulType);
+
+        listElasticSearchResult.getHits().getHits().stream().forEach(e -> listBuilds.add(e.get_source()));
 
         return listBuilds;
     }
@@ -716,7 +712,7 @@ public class ElasticManager {
         String json = "{ \"jenkinsMasterName\" : \""+master+"\",\n" +
                         " \"clusterName\" : \""+clusterName+"\",\n" +
                         " \"lastFlag\" :"+System.currentTimeMillis()+"," +
-                        " \"startupTime\" : "+System.currentTimeMillis() +
+                        " \"startupTime\" : "+ElasticJenkinsUtil.getStartupTime() +
                       "}";
         Type elasticsearchResulType = new TypeToken<ElasticsearchResult<Object>>(){}.getType();
         ElasticsearchResult esr = gson.fromJson(ElasticJenkinsUtil.elasticPost(uri, json), elasticsearchResulType);
@@ -738,14 +734,13 @@ public class ElasticManager {
     public List<String> getUnavailableNode() {
         List<String> listHealthIds = new ArrayList<>();
         //5 minutes before the current time
-        Long criticalTime = Math.subtractExact(System.currentTimeMillis(),Math.multiplyExact(3,10));
+        Long criticalTime = Math.subtractExact(System.currentTimeMillis(),Math.multiplyExact(300,1000));
         //Check if any nodes are marked as down
         String uri = url+"/"+jenkinsManageHealth+"/health/";
         String json = "{ \n" +
                 "  \"query\" : {\n" +
                 "    \"bool\" : {\n" +
                 "      \"must\" : [\n" +
-                "        { \"match\" :  { \"jenkinsMasterName\" : \""+master+"\" }},\n" +
                 "        { \"match\" :  { \"clusterName\" : \""+clusterName+"\" }},\n" +
                 "        { \"range\": { \"lastFlag\": { \"lt\": "+criticalTime+" }}}\n" +
                 "        ],\n" +
@@ -808,14 +803,14 @@ public class ElasticManager {
         //Get 100 entries page
         if(number == 0)
             return true;
-        double max = number/100;
+        float max = number/100;
         int ind = 0;
-        while(ind < max) {
+        while(ind <= max) {
             String jsonReq = "{ \"query\" : { \n" +
                     " \"bool\" : {\n" +
                     " \"must\" : [\n" +
                     "     { \"match\" : { \"status\" : \"ENQUEUED\" }},\n" +
-                    "     { \"match\" : { \"jenkinsMasterId\" : \""+masterId+"\" }}\n" +
+                    "     { \"match\" : { \"jenkinsMasterId\" : \""+masterId+"\" }},\n" +
                     "     { \"match\" : { \"startupTime\" : \""+node.getStartupTime()+"\" }}\n" +
                     "     ]\n" +
                     "}\n" +
@@ -827,11 +822,12 @@ public class ElasticManager {
 
             ind = ind + 1;
             String jsonBuilds = ElasticJenkinsUtil.elasticPost(uriBuilds,jsonReq);
+
             Type e2arType = new TypeToken<ElasticsearchArrayResult<GenericBuild>>(){}.getType();
-            ElasticsearchArrayResult<GenericBuild> e2ar = gson.fromJson(jsonBuilds,e2arType);
+            ElasticsearchArrayResult<GenericBuild> e2ar = gsonGenericBuild.fromJson(jsonBuilds,e2arType);
             for(ElasticsearchResult<GenericBuild> er : e2ar.getHits().getHits()) {
                 //Recover the build and delete if success
-                if(recoverBuild(er.get_source())) {
+                if(recoverBuild(er.get_source(),er.get_id())) {
                     if (!deleteBuild(er.get_id()))
                         success = false;
                 }else{
@@ -844,9 +840,9 @@ public class ElasticManager {
         return success;
     }
 
-    public boolean recoverBuild(GenericBuild genericBuild) {
-
-        return false;
+    public boolean recoverBuild(GenericBuild genericBuild,String id) {
+        ElasticJenkinsRecover elasticJenkinsRecover = new ElasticJenkinsRecover();
+        return elasticJenkinsRecover.rescheduleBuild(genericBuild,id);
     }
 
     public boolean deleteBuild(String genericBuildId) {
