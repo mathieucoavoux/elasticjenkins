@@ -1,6 +1,5 @@
 package io.jenkins.plugins.elasticjenkins.util;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.gson.*;
 
 import com.google.gson.reflect.TypeToken;
@@ -9,13 +8,10 @@ import com.jayway.jsonpath.JsonPath;
 import hudson.model.*;
 
 import io.jenkins.plugins.elasticjenkins.ElasticJenkinsRecover;
-import io.jenkins.plugins.elasticjenkins.ElasticJenkinsStarter;
 import io.jenkins.plugins.elasticjenkins.entity.*;
 import jenkins.model.Jenkins;
 
-import net.minidev.json.JSONArray;
 import org.apache.commons.collections.map.HashedMap;
-import org.kohsuke.stapler.bind.JavaScriptMethod;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -411,8 +407,8 @@ public class ElasticManager {
 
     /**
      * Create a mapping with the Elasticsearch id of the project and its hashed name and its encoded name
-     * @param projectHash: the URL of the project hashed
-     * @param projectEncodedName: the URL of the project encoded
+     * @param projectHash : the URL of the project hashed
+     * @param projectEncodedName : the URL of the project encoded
      * @return: the Elasticsearch id
      */
     public String addProjectMapping(@Nonnull String projectHash, @Nonnull String projectEncodedName) {

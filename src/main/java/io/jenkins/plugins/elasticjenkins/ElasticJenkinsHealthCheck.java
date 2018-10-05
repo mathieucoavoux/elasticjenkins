@@ -1,35 +1,36 @@
 package io.jenkins.plugins.elasticjenkins;
 
-import io.jenkins.plugins.elasticjenkins.entity.ElasticsearchArrayResult;
-import io.jenkins.plugins.elasticjenkins.entity.GenericBuild;
-import io.jenkins.plugins.elasticjenkins.entity.HealthCheck;
+import hudson.Extension;
+import hudson.model.PeriodicWork;
+import io.jenkins.plugins.elasticjenkins.util.ElasticJenkinsUtil;
 import io.jenkins.plugins.elasticjenkins.util.ElasticManager;
 
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class ElasticJenkinsHealthCheck extends TimerTask {
+@Extension
+public class ElasticJenkinsHealthCheck extends PeriodicWork {
 
     private static final Logger LOGGER = Logger.getLogger(ElasticJenkinsHealthCheck.class.getName());
 
-    protected String id;
     protected ElasticManager elasticManager = new ElasticManager();
 
-    public ElasticJenkinsHealthCheck(String id) {
-        this.id = id;
+
+    @Override
+    public long getRecurrencePeriod() {
+        return 10000;
     }
 
     @Override
-    public void run() {
-        LOGGER.log(Level.INFO, "Run task at:" + new Date());
-        //Update the id with the current time
-        elasticManager.updateHealthFlag(id);
+    protected void doRun() throws Exception {
+        //Update flag
+        elasticManager.updateHealthFlag(ElasticJenkinsUtil.getStartupTimeId());
+        //Check if any node is not available
         List<String> listHealthIds = elasticManager.getUnavailableNode();
         if (listHealthIds.size() == 0) {
             return;
         }
-
         //Mark all ID to recover
         Map<String, Boolean> map = elasticManager.markToRecover(listHealthIds);
         //Check if all ID has been marked correctly
@@ -49,4 +50,5 @@ public class ElasticJenkinsHealthCheck extends TimerTask {
             }
         }
     }
+
 }

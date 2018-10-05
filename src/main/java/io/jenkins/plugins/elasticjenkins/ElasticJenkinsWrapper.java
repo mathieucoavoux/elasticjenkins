@@ -98,8 +98,6 @@ public class ElasticJenkinsWrapper extends SimpleBuildWrapper implements Seriali
         public void tearDown(Run<?, ?> build, FilePath workspace, Launcher launcher, TaskListener listener) throws IOException, InterruptedException {
             if(build instanceof Run && pipeline == false){
                 //Update the status of the build and add the log output
-				LOGGER.log(Level.INFO,"Elasticsearch plugin build tearDown disposerImpl");
-				LOGGER.log(Level.INFO,"Id:"+id);
 
 				ElasticManager em = new ElasticManager();
 				//Handle weird characters

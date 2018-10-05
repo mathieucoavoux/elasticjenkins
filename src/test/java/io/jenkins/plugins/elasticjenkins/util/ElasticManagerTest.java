@@ -3,7 +3,6 @@ package io.jenkins.plugins.elasticjenkins.util;
 import com.google.gson.Gson;
 import com.jayway.jsonpath.JsonPath;
 import hudson.model.*;
-import io.jenkins.plugins.elasticjenkins.ElasticJenkinsManagement;
 import io.jenkins.plugins.elasticjenkins.entity.GenericBuild;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;

@@ -1,12 +1,11 @@
 package io.jenkins.plugins.elasticjenkins;
 
-import hudson.model.AbstractProject;
-import hudson.model.Cause;
-import hudson.model.ParameterValue;
-import hudson.model.ParametersAction;
+import hudson.model.*;
 import hudson.model.queue.QueueTaskFuture;
 import io.jenkins.plugins.elasticjenkins.entity.GenericBuild;
 import io.jenkins.plugins.elasticjenkins.entity.Parameters;
+import io.jenkins.plugins.elasticjenkins.util.ElasticJenkinsUtil;
+import io.jenkins.plugins.elasticjenkins.util.ElasticManager;
 import jenkins.model.Jenkins;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 
@@ -35,7 +34,8 @@ public class ElasticJenkinsRecover {
             //Recover workflow job
             return rescheduleWorkflowJob(genericBuild,id);
         }else{
-            LOGGER.log(Level.SEVERE,"Job not supported:"+Jenkins.getInstance().getItemByFullName(genericBuild.getName()).getClass().getName());
+            LOGGER.log(Level.SEVERE,"Project name:"+genericBuild.getName());
+            LOGGER.log(Level.SEVERE,"Project type:"+Jenkins.getInstance().getItemByFullName(genericBuild.getName()));
             LOGGER.log(Level.SEVERE, "Can not recover the job with the elasticsearch id:"+id);
             LOGGER.log(Level.SEVERE,"Please resubmit manually");
         }
@@ -65,7 +65,13 @@ public class ElasticJenkinsRecover {
             QueueTaskFuture queueTaskFuture = project.scheduleBuild2(0,actions);
             if(queueTaskFuture != null)
                 return true;
+            LOGGER.log(Level.SEVERE,"Queue task future is null");
         }
+        if(project == null)
+            LOGGER.log(Level.SEVERE,"Project is null");
+        else
+            LOGGER.log(Level.SEVERE,"Name is not equal to the genericBuild name. {0} != {1}",new Object[]{project.getFullName(),genericBuild.getName()});
+
         return false;
     }
 }

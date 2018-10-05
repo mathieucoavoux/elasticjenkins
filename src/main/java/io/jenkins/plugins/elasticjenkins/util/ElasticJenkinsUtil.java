@@ -55,6 +55,16 @@ public class ElasticJenkinsUtil {
 
     protected static Long startupTime;
 
+    public static String getStartupTimeId() {
+        return startupTimeId;
+    }
+
+    public static void setStartupTimeId(String startupTimeId) {
+        ElasticJenkinsUtil.startupTimeId = startupTimeId;
+    }
+
+    protected static String startupTimeId;
+
     public static String getJenkinsManageIndexCluster() {
         return jenkinsManageIndexCluster;
     }
