@@ -66,7 +66,7 @@ public class ElasticManager {
 
         //We set build values in a generic build to avoid to serialize unnecessary values
         GenericBuild genericBuild = new GenericBuild();
-        genericBuild.setName(ElasticJenkinsUtil.convertUrlToFullName(build.getUrl()));
+        genericBuild.setName(ElasticJenkinsUtil.convertUrlToFullName(build.getParent().getUrl()));
         genericBuild.setUrl(build.getParent().getUrl());
         genericBuild.setId(build.getId());
         genericBuild.setStartDate(System.currentTimeMillis());
@@ -321,7 +321,7 @@ public class ElasticManager {
         try {
             writer = new BufferedWriter(new FileWriter(file.getPath(),true));
             for(String row: (List<String>) gson.fromJson(JsonPath.parse(ElasticJenkinsUtil.elasticGet(uri)).read("$.logs").toString(),List.class)) {
-                writer.append(row+"\n");
+                writer.append(row).append("\n");
             }
 
             writer.close();
@@ -497,23 +497,25 @@ public class ElasticManager {
         genericBuild.setId(Long.toString(waitingItem.getId()));
 
         List<ParametersAction> parametersActions = waitingItem.getActions(ParametersAction.class);
-        List<Parameters> listParameters = new ArrayList<>();
-        for(ParametersAction parametersAction : parametersActions) {
-            List<ParameterValue> parameterValues = parametersAction.getAllParameters();
-            for(ParameterValue parameterValue : parameterValues) {
-                Parameters parameters = new Parameters();
-                parameters.setName(parameterValue.getName());
-                parameters.setValue(parameterValue.getValue());
-                parameters.setDescription(parameterValue.getDescription());
-                listParameters.add(parameters);
-            }
+        if(parametersActions.size() > 0) {
+            List<Parameters> listParameters = new ArrayList<>();
+            for (ParametersAction parametersAction : parametersActions) {
+                List<ParameterValue> parameterValues = parametersAction.getAllParameters();
+                for (ParameterValue parameterValue : parameterValues) {
+                    Parameters parameters = new Parameters();
+                    parameters.setName(parameterValue.getName());
+                    parameters.setValue(parameterValue.getValue());
+                    parameters.setDescription(parameterValue.getDescription());
+                    listParameters.add(parameters);
+                }
 
+            }
+            genericBuild.setParametersAction(parametersActions);
         }
         genericBuild.setParametersAction(parametersActions);
         genericBuild.setQueuedSince(waitingItem.getInQueueSince());
         genericBuild.setJenkinsMasterName(master);
         genericBuild.setStartupTime(ElasticJenkinsUtil.getStartupTime());
-        genericBuild.setJenkinsMasterName(master);
         genericBuild.setJenkinsMasterId(ElasticJenkinsUtil.getCurentMasterId());
 
         try {
@@ -824,10 +826,13 @@ public class ElasticManager {
             for(ElasticsearchResult<GenericBuild> er : e2ar.getHits().getHits()) {
                 //Recover the build and delete if success
                 if(recoverBuild(er.get_source(),er.get_id())) {
-                    if (!deleteBuild(er.get_id()))
+                    if (!deleteBuild(er.get_id())) {
                         success = false;
+                        LOGGER.log(Level.SEVERE,"Can not delete queued item:"+er.get_id());
+                    }
                 }else{
                     success = false;
+                    LOGGER.log(Level.SEVERE,"Can not recover queued item:"+er.get_id());
                 }
 
             }

@@ -14,7 +14,7 @@
     <version>1.0-SNAPSHOT</version>
     <packaging>hpi</packaging>
     <properties>
-        <jenkins.version>2.85</jenkins.version>
+        <jenkins.version>2.89</jenkins.version>
         <java.level>8</java.level>
         <elasticsearch.version>6.2.4</elasticsearch.version>
         <javadoc.exec.goal>javadoc</javadoc.exec.goal>
@@ -93,7 +93,7 @@
         <dependency>
             <groupId>org.jenkins-ci.main</groupId>
             <artifactId>remoting</artifactId>
-            <version>3.13</version>
+            <version>3.14</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/com.jayway.jsonpath/json-path -->
         <dependency>

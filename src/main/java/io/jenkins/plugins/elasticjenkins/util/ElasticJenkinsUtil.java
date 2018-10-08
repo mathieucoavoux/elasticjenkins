@@ -110,14 +110,14 @@ public class ElasticJenkinsUtil {
      * Get the job url to take the project name as the project display name can contain
      * quotes because of the folder plugin.
      * Examples:
-     * 		Freestyle job: job/Job1/94/
-     * 		Folder job: job/Demo/job/Test1/22/
+     * 		Freestyle job: job/Job1/
+     * 		Folder job: job/Demo/job/Test1/
      * @param url: Jenkins job url
      * @return: job name
      */
     public static String convertUrlToFullName(String url) {
         String[] extractString = url.split("/");
-        int max = extractString.length - 2;	//We always ignore the latest entry as this is for the ID
+        int max = extractString.length - 1;	//We always ignore the latest entry as this is for the ID
         String title = extractString[1];	//We always ignore the first entry as this is job
         for(int ind=3;ind<=max;ind+=2) {
             title = title.concat("/"+extractString[ind]);
