@@ -128,7 +128,9 @@
                                     <td>${item.getStatus()}</td>
                                     <td>
                                         <j:forEach var="palist" items="${item.getParameters()}">
-                                            <pre>${palist.getName()} : ${palist.getValue()}</pre>
+                                            <j:forEach var="pv" items="${palist.getParameters()}">
+                                                <pre>${pv.getName()} : ${pv.getValue()}</pre>
+                                            </j:forEach>
                                         </j:forEach>
                                     </td>
                                     <td>${item.getJenkinsMasterName()}</td>

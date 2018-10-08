@@ -462,7 +462,7 @@ public class ElasticManager {
                 "    \"bool\": {\n" +
                 "      \"must\": [\n" +
                 "        { \"match\": { \"jenkinsMasterName\": \""+masters+"\" }},\n" +
-                "        { \"match\": { \"parameters.value\": \""+parameter+"\" }},\n" +
+                "        { \"match\": { \"parameters.parameters.value\": \""+parameter+"\" }},\n" +
                 "        { \"match\": { \"projectId\": \""+getProjectId(hash)+"\" }}\n" +
                 "      ]\n" +
                 "    }\n" +

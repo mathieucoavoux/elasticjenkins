@@ -24,9 +24,11 @@ function addContent(json_history,location) {
 
         //Loop for all parameters
         var myParameters = "";
-        if(typeof array_history[i].parameters != 'undefined') {
+        if(typeof array_history[i].parameters != 'undefined' && array_history[i].parameters.parameters != 'undefined') {
             for(indParam=0;indParam<array_history[i].parameters.length;indParam++) {
-                myParameters = "<pre>"+myParameters + array_history[i].parameters[indParam].name+" : "+myParameters + array_history[i].parameters[indParam].value+"<pre>"
+                for(indParam2=0;indParam2<array_history[i].parameters[indParam].parameters.length;indParam2++) {
+                    myParameters = "<pre>"+myParameters + array_history[i].parameters[indParam].parameters[indParam2].name+" : "+ array_history[i].parameters[indParam].parameters[indParam2].value+"<pre>"
+                }
             }
             var tdParameters = document.createElement("td");
             tdParameters.innerHTML = myParameters;
@@ -43,7 +45,7 @@ function addContent(json_history,location) {
         tr.appendChild(tdId);
         tr.appendChild(tdName);
         tr.appendChild(tdStatus);
-        if(typeof array_history[i].parameters != 'undefined') {
+        if(typeof array_history[i].parameters != 'undefined' && array_history[i].parameters.parameters != 'undefined') {
             tr.appendChild(tdParameters);
         }
         tr.appendChild(tdMaster);
