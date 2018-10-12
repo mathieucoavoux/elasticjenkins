@@ -197,6 +197,7 @@ public class ElasticManager {
                                                       @Nonnull String viewType,
                                                       @Nonnull Integer paginationSize, @Nullable String paginationStart) {
 
+        LOGGER.log(Level.INFO,"Project name:"+projectName);
         List<GenericBuild> listBuilds = new ArrayList<>();
         String uri = url+"/"+jenkinsBuildsIndex+"/"+jenkinsBuildsType+"/_search";
 
@@ -221,7 +222,6 @@ public class ElasticManager {
                 " \"sort\" :  { \"_id\" : { \"order\" : \"desc\" } }\n" +
                 "}";
 
-
         String jsonResponse = ElasticJenkinsUtil.elasticPost(uri,json);
 
         Type elasticsearchArrayResulType = new TypeToken<ElasticsearchArrayResult<GenericBuild>>(){}.getType();
@@ -229,7 +229,6 @@ public class ElasticManager {
         ElasticsearchArrayResult<GenericBuild> listElasticSearchResult = gsonGenericBuild.fromJson(jsonResponse,elasticsearchArrayResulType);
 
         listElasticSearchResult.getHits().getHits().stream().forEach(e -> listBuilds.add(e.get_source()));
-
         return listBuilds;
     }
 

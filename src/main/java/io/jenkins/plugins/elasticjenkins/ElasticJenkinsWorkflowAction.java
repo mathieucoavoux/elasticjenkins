@@ -86,8 +86,7 @@ public class ElasticJenkinsWorkflowAction implements Action {
 
 
     @JavaScriptMethod
-    public String getPagninatedHistoryJson(@Nonnull String type,
-                                           @Nonnull String viewType,
+    public String getPagninatedHistoryJson(@Nonnull String viewType,
                                            @Nonnull Integer paginationSize,@Nonnull String paginationStart) {
         ElasticManager elasticManager = new ElasticManager();
         String index = ElasticJenkinsUtil.getHash(target.getUrl().split("/$")[0]);

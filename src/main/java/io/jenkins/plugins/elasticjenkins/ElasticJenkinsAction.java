@@ -89,9 +89,9 @@ public class ElasticJenkinsAction extends ComputerLauncher implements RunAction2
 
 
     @JavaScriptMethod
-    public String getPagninatedHistoryJson(@Nonnull String type,
-                                           @Nonnull String viewType,
+    public String getPagninatedHistoryJson(@Nonnull String viewType,
                                            @Nonnull Integer paginationSize,@Nonnull String paginationStart) {
+
         ElasticManager elasticManager = new ElasticManager();
         String index = ElasticJenkinsUtil.getHash(project.getUrl().split("/$")[0]);
         Gson gson = new Gson();

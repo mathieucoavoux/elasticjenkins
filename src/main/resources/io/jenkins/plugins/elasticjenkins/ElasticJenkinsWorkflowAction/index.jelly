@@ -17,6 +17,7 @@
                 var number = 0;
                 var last_fetch = new Date().getTime();
                 var eja = <st:bind value="${it}" />;
+                var rootUrl = "${rootURL}";
                 function getPaginatedHistory(type,reset) {
                 var view_type = document.getElementById("select_view_type").value;
                 var divNumberPage = document.getElementById("number_pages");

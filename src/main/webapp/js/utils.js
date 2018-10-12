@@ -1,5 +1,4 @@
 function addContent(json_history,location) {
-
     var array_history = JSON.parse(json_history);
     var table = document.getElementById("result_tbody");
     for(i=0;i<array_history.length;i++) {
@@ -23,6 +22,7 @@ function addContent(json_history,location) {
         tdStatus.appendChild(status);
 
         //Loop for all parameters
+        var tdParameters = document.createElement("td");
         var myParameters = "";
         if(typeof array_history[i].parameters != 'undefined' && array_history[i].parameters.parameters != 'undefined') {
             for(indParam=0;indParam<array_history[i].parameters.length;indParam++) {
@@ -30,7 +30,6 @@ function addContent(json_history,location) {
                     myParameters = "<pre>"+myParameters + array_history[i].parameters[indParam].parameters[indParam2].name+" : "+ array_history[i].parameters[indParam].parameters[indParam2].value+"<pre>"
                 }
             }
-            var tdParameters = document.createElement("td");
             tdParameters.innerHTML = myParameters;
         }
         var tdMaster = document.createElement("td");
@@ -38,18 +37,23 @@ function addContent(json_history,location) {
         tdMaster.appendChild(master);
 
         var tdExecutedOn = document.createElement("td");
-        var executedOn = document.createTextNode(array_history[i].executedOn);
-        tdExecutedOn.appendChild(executedOn);
+        if(typeof array_history[i].executedOn != 'undefined' && array_history[i].executedOn != 'undefined') {
+            var executedOn = document.createTextNode(array_history[i].executedOn);
+            tdExecutedOn.appendChild(executedOn);
+        }
+
+        var tdLog = document.createElement("td");
+        var logLink = "<td><a href=\"getLog?id="+array_history[i].id+"_"+ array_history[i].projectId+"_"+ array_history[i].jenkinsMasterId+"\"><img src=\""+rootUrl+"/plugin/elasticjenkins/36x36/log_icon.png\" ></img></a></td>"
+        tdLog.innerHTML = logLink;
 
         tr.appendChild(tdCheck);
         tr.appendChild(tdId);
         tr.appendChild(tdName);
         tr.appendChild(tdStatus);
-        if(typeof array_history[i].parameters != 'undefined' && array_history[i].parameters.parameters != 'undefined') {
-            tr.appendChild(tdParameters);
-        }
+        tr.appendChild(tdParameters);
         tr.appendChild(tdMaster);
         tr.appendChild(tdExecutedOn);
+        tr.appendChild(tdLog);
         if(location == "after") {
             table.appendChild(tr);
         }else{
