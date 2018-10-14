@@ -38,7 +38,7 @@ public class ElasticJenkinsListener extends QueueListener implements ExtensionPo
     public void onLeft(Queue.LeftItem leftItem) {
         LOGGER.log(Level.FINEST,"Id:"+leftItem.outcome.item.getId());
         ElasticManager elasticManager = new ElasticManager();
-        elasticManager.updateQueueItem(leftItem,id);
+        elasticManager.updateQueueItem(id);
     }
 
     public static ExtensionList<QueueListener> all() {
