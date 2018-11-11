@@ -82,7 +82,7 @@ public class ElasticJenkinsWrapper extends SimpleBuildWrapper implements Seriali
 				this.projectId = em.addProjectMapping(index,URLEncoder.encode(buildUrl,ElasticJenkinsUtil.getProperty("elasticCharset")));
 				if( ElasticJenkinsUtil.isEmpty) {
 					ElasticJenkinsUtil elasticJenkinsUtil = new ElasticJenkinsUtil();
-					elasticJenkinsUtil.setIsEmtpy(false);
+					elasticJenkinsUtil.setIsEmpty(false);
 				}
 
 			} catch (UnsupportedEncodingException e) {

@@ -14,8 +14,7 @@ public class ElasticJenkinsHealthCheck extends PeriodicWork {
 
     private static final Logger LOGGER = Logger.getLogger(ElasticJenkinsHealthCheck.class.getName());
 
-    protected ElasticManager elasticManager = new ElasticManager();
-
+    private ElasticManager elasticManager;
 
     @Override
     public long getRecurrencePeriod() {
@@ -24,6 +23,14 @@ public class ElasticJenkinsHealthCheck extends PeriodicWork {
 
     @Override
     protected void doRun() throws Exception {
+        if(!ElasticJenkinsUtil.getJenkinsHealthCheckEnable())
+            return;
+        if (ElasticJenkinsUtil.getMasterName() == null || ElasticJenkinsUtil.getClusterName() == null ) {
+            return;
+        }
+        //Check if elasticManager has been initialized already
+        if(elasticManager == null)
+            this.elasticManager = new ElasticManager();
         //Update flag
         elasticManager.updateHealthFlag(ElasticJenkinsUtil.getStartupTimeId());
         //Check if any node is not available
@@ -40,9 +47,9 @@ public class ElasticJenkinsHealthCheck extends PeriodicWork {
                 boolean success = elasticManager.recoverBuilds(entry.getKey());
 
 
-                if(success) {
+                if (success) {
                     elasticManager.markCompletedRecover(entry.getKey(), "SUCCESS");
-                }else {
+                } else {
                     elasticManager.markCompletedRecover(entry.getKey(), "FAILED");
                 }
             } else {

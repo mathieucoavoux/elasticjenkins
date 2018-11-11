@@ -9,10 +9,11 @@ import io.jenkins.plugins.elasticjenkins.entity.GenericBuild;
 import io.jenkins.plugins.elasticjenkins.util.ElasticJenkinsUtil;
 import io.jenkins.plugins.elasticjenkins.util.ElasticManager;
 import jnr.ffi.annotations.In;
-import org.jenkinsci.Symbol;
+//import org.jenkinsci.Symbol;
 
 import hudson.Extension;
 import hudson.widgets.Widget;
+
 import org.kohsuke.stapler.Header;
 import org.kohsuke.stapler.Stapler;
 import org.kohsuke.stapler.StaplerRequest;
@@ -22,7 +23,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
 import java.util.List;
 
 
-@Extension(ordinal=100) @Symbol("elasticqueue")
+@Extension(ordinal=100)
 public class ElasticBuildQueueWidget extends Widget{
 
 

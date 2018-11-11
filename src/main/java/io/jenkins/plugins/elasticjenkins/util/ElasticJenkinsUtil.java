@@ -6,7 +6,6 @@ import com.google.gson.*;
 import com.jayway.jsonpath.JsonPath;
 import hudson.model.ParameterValue;
 import hudson.model.StringParameterValue;
-import io.jenkins.plugins.elasticjenkins.entity.GenericBuild;
 import jenkins.model.Jenkins;
 import org.apache.http.client.methods.*;
 import org.apache.http.entity.StringEntity;
@@ -32,28 +31,35 @@ public class ElasticJenkinsUtil {
 
     private static final Logger LOGGER = Logger.getLogger(ElasticJenkinsUtil.class.getName());
 
-    protected static File propertiesFile = new File(Jenkins.getInstance().getRootDir()+"/elasticjenkins.properties");
+    private static File propertiesFile = new File(Jenkins.getInstance().getRootDir()+"/elasticjenkins.properties");
 
     private static String jenkinsManageIndexCluster = ElasticJenkinsUtil.getProperty("jenkinsManageClusterIndex");
     private static String jenkinsManageIndexMapping = ElasticJenkinsUtil.getProperty("jenkinsManageMappingIndex");
     private static String jenkinsBuildsIndex = ElasticJenkinsUtil.getProperty("jenkinsBuildsIndex");
     private static String jenkinsQueuesIndex = ElasticJenkinsUtil.getProperty("jenkinsQueuesIndex");
-    private static String jenkinsManageClusters = "clusters";
-    private static String jenkinsManageMapping = "mapping";
+    private static String jenkinsLogsIndex = ElasticJenkinsUtil.getProperty("jenkins_logs");
 
     protected static String charset = ElasticJenkinsUtil.getProperty("elasticCharset");
-    protected static String masterName = ElasticJenkinsUtil.getProperty("masterName");
+    private static String masterName = ElasticJenkinsUtil.getProperty("masterName");
     protected static String health = ElasticJenkinsUtil.getProperty("jenkinsMappingHealth");
 
-    public static Long getStartupTime() {
+    private static boolean jenkinsHealthCheckEnable = true;
+
+    static Long getStartupTime() {
         return startupTime;
+    }
+
+    public static boolean getJenkinsHealthCheckEnable() { return jenkinsHealthCheckEnable ;}
+
+    public static void setJenkinsHealthCheckEnable(boolean newJenkinsHealthCheckEnable) {
+        jenkinsHealthCheckEnable = newJenkinsHealthCheckEnable;
     }
 
     public static void setStartupTime(Long startupTime) {
         ElasticJenkinsUtil.startupTime = startupTime;
     }
 
-    protected static Long startupTime;
+    private static Long startupTime;
 
     public static String getStartupTimeId() {
         return startupTimeId;
@@ -63,7 +69,7 @@ public class ElasticJenkinsUtil {
         ElasticJenkinsUtil.startupTimeId = startupTimeId;
     }
 
-    protected static String startupTimeId;
+    private static String startupTimeId;
 
     public static String getJenkinsManageIndexCluster() {
         return jenkinsManageIndexCluster;
@@ -81,13 +87,7 @@ public class ElasticJenkinsUtil {
         return jenkinsQueuesIndex;
     }
 
-    public static String getJenkinsManageClusters() {
-        return jenkinsManageClusters;
-    }
-
-    public static String getJenkinsManageMapping() {
-        return jenkinsManageMapping;
-    }
+    public static String getJenkinsLogsIndex() { return jenkinsLogsIndex; }
 
     public static String getClusterName() {
         LOGGER.log(Level.FINEST,"ClusterName:"+clusterName);
@@ -113,9 +113,9 @@ public class ElasticJenkinsUtil {
      * 		Freestyle job: job/Job1/
      * 		Folder job: job/Demo/job/Test1/
      * @param url: Jenkins job url
-     * @return: job name
+     * @return job name
      */
-    public static String convertUrlToFullName(String url) {
+    static String convertUrlToFullName(String url) {
         String[] extractString = url.split("/");
         int max = extractString.length - 1;	//We always ignore the latest entry as this is for the ID
         String title = extractString[1];	//We always ignore the first entry as this is job
@@ -129,7 +129,7 @@ public class ElasticJenkinsUtil {
      * Compute the hash of the job as the job name can contain dirty parameters
      * since we have no control on the job name
      * @param url: Jenkins job url
-     * @return: hash of the job
+     * @return hash of the job
      */
     public static String getHash(@Nonnull  String url) {
         LOGGER.log(Level.FINEST,"URL: "+url);
@@ -158,33 +158,37 @@ public class ElasticJenkinsUtil {
         LOGGER.log(Level.FINEST,"masterName:"+masterName);
         return masterName;}
 
-    public static void setMasterName(String newMasterName) { masterName = newMasterName; }
+    private static void setMasterName(String newMasterName) { masterName = newMasterName; }
 
     public static void setClusterName(String newClusterName){ clusterName = newClusterName;}
 
     public static void setUrl(String newUrl){ url = newUrl;}
 
-    public static void setJenkinsManageIndexCluster(String newJenkinsManageIndexCluster) {
+    private static void setJenkinsManageIndexCluster(String newJenkinsManageIndexCluster) {
         jenkinsManageIndexCluster = newJenkinsManageIndexCluster;
     }
 
-    public static void setJenkinsManageIndexMapping(String newJenkinsManageIndexMapping){
+    private static void setJenkinsManageIndexMapping(String newJenkinsManageIndexMapping){
         jenkinsManageIndexMapping = newJenkinsManageIndexMapping;
     }
 
-    public static void setJenkinsBuildsIndex(String newJenkinsBuildsIndex){
+    private static void setJenkinsBuildsIndex(String newJenkinsBuildsIndex){
         jenkinsBuildsIndex = newJenkinsBuildsIndex;
     }
 
-    public static void setJenkinsQueuesIndex(String newJenkinsQueuesIndex) {
+    private static void setJenkinsQueuesIndex(String newJenkinsQueuesIndex) {
         jenkinsQueuesIndex = newJenkinsQueuesIndex;
+    }
+
+    private static void setJenkinsLogsIndex(String newJenkinsLogIndex) {
+        jenkinsLogsIndex = newJenkinsLogIndex;
     }
 
     public static void setIsInitialized(boolean newIsInitialized){ isInitialized = newIsInitialized;}
 
-    public static void setIsEmtpy(boolean newIsEmpty){isEmpty = newIsEmpty;}
+    public static void setIsEmpty(boolean newIsEmpty){isEmpty = newIsEmpty;}
 
-    public static void setJenkinsHealth(String newJenkinsIndexHealth) {
+    private static void setJenkinsHealth(String newJenkinsIndexHealth) {
         health = newJenkinsIndexHealth;
     }
 
@@ -230,7 +234,7 @@ public class ElasticJenkinsUtil {
      * @param clusterIndex: The index of the cluster configuration
      * @param mappingIndex: The index use for the project mapping.
      * @param mappingHealth: The index use for the health
-     * @return: boolean true if saved successfully
+     * @return boolean true if saved successfully
      */
     public static synchronized boolean writeProperties(@Nonnull String masterName,
                                                        @Nonnull String clusterName,
@@ -244,6 +248,7 @@ public class ElasticJenkinsUtil {
         setMasterName(masterName);
         setClusterName(clusterName);
         setUrl(persistenceStore);
+        setJenkinsLogsIndex(logIndex);
         setJenkinsBuildsIndex(buildsIndex);
         setJenkinsQueuesIndex(queuesIndex);
         setJenkinsManageIndexCluster(clusterIndex);
@@ -269,7 +274,8 @@ public class ElasticJenkinsUtil {
             props.store(writer, "Persist properties");
         }catch (FileNotFoundException e) {
             LOGGER.log(Level.WARNING, "Properties file not found. This may occur in testing mode. We try to create parent directory");
-            Jenkins.getInstance().getRootDir().mkdirs();
+            //Since the RootDir can be different during the unit test we take the base directory of the properties
+            new File(propertiesFile.getParent()).mkdirs();
             try {
                 out = new FileOutputStream(propertiesFile);
                 BufferedWriter writer = new BufferedWriter(new FileWriter(propertiesFile.getPath(), false));
@@ -293,16 +299,15 @@ public class ElasticJenkinsUtil {
         return true;
     }
 
-    public static String getElasticsearchStatus(@Nonnull String url) {
+    public static String getElasticSearchStatus(@Nonnull String url) {
 
         String uri = url+"/_cluster/health";
-        String result = JsonPath.parse(elasticGet(uri)).read("$.status").toString();
 
-        return result;
+        return JsonPath.parse(elasticGet(uri)).read("$.status").toString();
     }
 
     public static String getIdByMaster(@Nonnull String master) {
-        String uri = getProperty("persistenceStore")+"/"+ jenkinsManageIndexCluster +"/clusters/_search";
+        String uri = url+"/"+ jenkinsManageIndexCluster +"/clusters/_search";
         String json = "{ \"query\" : {\n" +
                 "  \"match\" : {\n" +
                 "    \"jenkinsMasterName\" : \""+master+"\" \n" +
@@ -479,7 +484,7 @@ public class ElasticJenkinsUtil {
      * Send POST resquest to Elasticsearch
      * @param uri: URI
      * @param json: JSON sent in the POST
-     * @return: JSON result
+     * @return JSON result
      */
     public static String elasticPost(@Nonnull String uri,@Nonnull String json) {
         String result = null;
@@ -497,7 +502,8 @@ public class ElasticJenkinsUtil {
             CloseableHttpResponse response = client.execute(httpPost);
             result = EntityUtils.toString(response.getEntity());
             LOGGER.log(Level.FINEST,"Response:"+response.getStatusLine().getStatusCode()+",Message:"+response.getStatusLine().getReasonPhrase());
-
+            if(response.getStatusLine().getStatusCode() > 399)
+                LOGGER.log(Level.WARNING,"Code:{0}, Message: {1}", new Object[]{response.getStatusLine().getStatusCode(),response.getStatusLine().getReasonPhrase()});
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE,"An unexpected response was received:",e);
         }finally {
@@ -507,15 +513,16 @@ public class ElasticJenkinsUtil {
                 LOGGER.log(Level.WARNING,"Cannot close the connection");
             }
         }
+
         return result;
     }
 
     /**
      * Send a GET request to Elasticsearch and return the value
      * @param uri: URI
-     * @return: JSON result
+     * @return JSON result
      */
-    public static String elasticGet(@Nonnull String uri) {
+    static String elasticGet(@Nonnull String uri) {
         String result = null;
         HttpGet httpGet = new HttpGet(uri);
         httpGet.setHeader("Accept","application/json");
@@ -538,7 +545,7 @@ public class ElasticJenkinsUtil {
         return result;
     }
 
-    public static String elasticPut(@Nonnull String uri,@Nonnull String json) {
+    private static String elasticPut(@Nonnull String uri, @Nonnull String json) {
         String result = null;
         HttpPut httpPut = new HttpPut(uri);
         httpPut.setHeader("Accept","application/json");
@@ -570,7 +577,7 @@ public class ElasticJenkinsUtil {
         return result;
     }
 
-    public static boolean elasticDelete(String uri) {
+    static boolean elasticDelete(String uri) {
         boolean result = false;
         HttpDelete httpDelete = new HttpDelete(uri);
         httpDelete.setHeader("Accept","application/json");
@@ -578,7 +585,7 @@ public class ElasticJenkinsUtil {
         CloseableHttpClient client = builder.build();
         try {
             CloseableHttpResponse response = client.execute(httpDelete);
-            result = response.getStatusLine().getStatusCode() == 200 ? true : false;
+            result = response.getStatusLine().getStatusCode() == 200;
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE,"An unexpected response was received:",e);
         }finally {
@@ -608,7 +615,7 @@ public class ElasticJenkinsUtil {
     }
 
     public static String getHostname() {
-        String master = null;
+        String master;
         try {
             master = InetAddress.getLocalHost().getHostName();
         } catch (UnknownHostException e) {
@@ -620,8 +627,9 @@ public class ElasticJenkinsUtil {
 
     }
 
-    protected static String getCurentMasterId() {
-        String uri = url+"/"+jenkinsManageIndexCluster+"/"+jenkinsManageClusters+"/_search";
+    static String getCurrentMasterId() {
+        String jenkinsManageClusters = "clusters";
+        String uri = url+"/"+jenkinsManageIndexCluster+"/"+ jenkinsManageClusters +"/_search";
         //First we check if the hash has been already saved
         String jsonReq = "{ \"query\" : { \n" +
                 " \"bool\" : {\n" +
@@ -644,44 +652,7 @@ public class ElasticJenkinsUtil {
                 "$.hits.hits[0]._id").toString(),String.class);
     }
 
-    public static Integer getCountCurrentBuilds(String masters) {
-        String uri = url+"/"+jenkinsBuildsIndex+"/builds/_count";
-        //First we check if the hash has been already saved
-        String jsonReq = "{ \"query\" : { \n" +
-                " \"bool\" : {\n" +
-                " \"must\" : [\n" +
-                "     { \"match\" : { \"status\" : \"EXECUTING\" }},\n" +
-                "     { \"match\" : { \"jenkinsMasterName\" : \""+masters+"\" }}\n" +
-                "     ]\n" +
-                "}\n" +
-                "}\n" +
-                "}";
-
-        String jsonResponse = ElasticJenkinsUtil.elasticPost(uri,jsonReq);
-        return JsonPath.parse(jsonResponse).read("$.count");
-
-    }
-
-    public static Integer getCountCurrentItem(String masters) {
-        String uri = url+"/"+jenkinsQueuesIndex+"/queues/_count";
-        //First we check if the hash has been already saved
-        String jsonReq = "{ \"query\" : { \n" +
-                " \"bool\" : {\n" +
-                " \"must\" : [\n" +
-                "     { \"match\" : { \"status\" : \"ENQUEUED\" }},\n" +
-                "     { \"match\" : { \"jenkinsMasterName\" : \""+masters+"\" }}\n" +
-                "     ]\n" +
-                "}\n" +
-                "}\n" +
-                "}";
-
-        String jsonResponse = ElasticJenkinsUtil.elasticPost(uri,jsonReq);
-        return JsonPath.parse(jsonResponse).read("$.count");
-
-    }
-
-
-    public static JsonDeserializer<ParameterValue> getPVDeserializer() {
+    static JsonDeserializer<ParameterValue> getPVDeserializer() {
         return new JsonDeserializer<ParameterValue>() {
             @Override
             public ParameterValue deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
@@ -693,5 +664,4 @@ public class ElasticJenkinsUtil {
             }
         };
     }
-
 }

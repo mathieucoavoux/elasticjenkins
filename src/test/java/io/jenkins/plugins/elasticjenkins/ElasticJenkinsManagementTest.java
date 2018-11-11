@@ -1,51 +1,113 @@
 package io.jenkins.plugins.elasticjenkins;
 
+import hudson.model.Hudson;
 import io.jenkins.plugins.elasticjenkins.util.ElasticManager;
+import jenkins.model.Jenkins;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+import org.junit.runner.RunWith;
+import org.jvnet.hudson.reactor.ReactorException;
+import org.jvnet.hudson.test.JenkinsRecipe;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.TestEnvironment;
+import org.jvnet.hudson.test.WithoutJenkins;
 import org.kohsuke.stapler.HttpResponse;
+import org.kohsuke.stapler.StaplerRequest;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
+/*
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({Jenkins.class,ElasticJenkinsManagement.class})
+@PowerMockIgnore({"javax.crypto.*"})
+*/
 public class ElasticJenkinsManagementTest {
 
-    public static String url = "http://localhost:9200";
-    public static String master = "MASTERNAME";
-    public static String clusterName = "CLUSTERNAME";
-    public static String hostname = "MYHOST";
-    private static String indexLog = "jenkins_logs";
-    public String buildsIndex = "jenkins_builds";
-    public String queueIndex = "jenkins_queues";
-    public static String jenkinsManageIndexCluster = "jenkins_manage_clusters";
-    public static String jenkinsManageIndexMapping = "jenkins_manage_mapping";
-    public static String jenkinsManageHealth = "jenkins_manage_health";
-    public static String jenkinsManageType = "clusters";
 
-    @Rule
-    public JenkinsRule j = new JenkinsRule();
 
-    public void deleteCluster(String id) throws IOException {
-        String uri = url+"/"+jenkinsManageIndexCluster+"/"+jenkinsManageType+"/"+id;
-        HttpDelete httpDelete = new HttpDelete(uri);
-        httpDelete.setHeader("Accept","application/json");
-        HttpClientBuilder builder = HttpClientBuilder.create();
-        CloseableHttpClient client = builder.build();
-        CloseableHttpResponse response = client.execute(httpDelete);
+
+    @Rule public JenkinsRule j = new JenkinsRule(){
+        @Override
+        public void after() throws Exception {
+            super.after();
+            if(TestEnvironment.get() != null) {
+                try {
+                    TestEnvironment.get().dispose();
+                }catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    };
+
+    //@Rule
+    //public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
+    //TestsUtil testsUtil = new TestsUtil(j, temporaryFolder);
+
+//    @Mock
+//    private Jenkins jenkins;
+
+    private static String master = "MASTERNAME3";
+    private static String clusterName = "CLUSTER_NAME3";
+
+
+    private static String testFolder = "elasticjenkins";
+
+    public static String root = (System.getProperty("java.io.tmpdir"))+testFolder;
+    public static File testFile = new File(root);
+
+    @BeforeClass
+    public static void initialize() throws IOException {
+        if(! testFile.exists()) {
+            if(!testFile.mkdirs())
+                throw new IOException("Can not execute since the directory is not writtable: "+root);
+        }
+
     }
 
+    @Before
+    public void setUp() throws IOException, InterruptedException {
+  //      PowerMockito.mockStatic(Jenkins.class);
+  //      PowerMockito.when(Jenkins.getInstance()).thenReturn(jenkins);
+  //      PowerMockito.when(jenkins.getRootDir()).thenReturn(testFile);
+        //testsUtil.reset();
+    }
+
+
     @Test
-    public void testDoConfigure() throws IllegalAccessException, NoSuchFieldException, IOException, InterruptedException {
+    public void testDoConfigure() throws IllegalAccessException, NoSuchFieldException, IOException, InterruptedException, ReactorException {
+
+
+        //Jenkins jenkinsEmpty = new Jenkins(null,null);
+        //PowerMockito.when(Jenkins.getInstance()).thenReturn(Jenkins.getInstanceOrNull());
+
+
+
         ElasticJenkinsManagement elasticJenkinsManagement = new ElasticJenkinsManagement();
-        HttpResponse responseOK = elasticJenkinsManagement.doConfigure(master,url,"UTF-8",clusterName,indexLog,buildsIndex,queueIndex,false,jenkinsManageIndexCluster,jenkinsManageIndexMapping, jenkinsManageHealth);
+
+        HttpResponse responseOK = elasticJenkinsManagement.doConfigure(master,TestsUtil.url,"UTF-8",
+                clusterName,TestsUtil.logIndex,TestsUtil.buildsIndex,TestsUtil.queueIndex,
+                false,TestsUtil.clusterIndex,TestsUtil.mappingIndex, TestsUtil.mappingHealth);
         //Check response
         Field statusCodeField = responseOK.getClass().getDeclaredField("statusCode");
         statusCodeField.setAccessible(true);
@@ -57,9 +119,9 @@ public class ElasticJenkinsManagementTest {
         Thread.sleep(2000);
         //Get Id of the master to delete it
         ElasticManager elasticManager = new ElasticManager();
-        List<String> listIds = elasticManager.getMasterIdByNameAndCluster(master,clusterName);
+        List<String> listIds = elasticManager.getMasterIdByNameAndCluster(TestsUtil.master,TestsUtil.clusterName);
         for(String id : listIds) {
-            deleteCluster(id);
+            //testsUtil.deleteTest(TestsUtil.clusterIndex,TestsUtil.clusterType,id);
         }
 
     }

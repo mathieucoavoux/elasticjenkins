@@ -92,7 +92,7 @@ public class ElasticManager {
         genericBuild.setLaunchedByName(User.current().getDisplayName());
         genericBuild.setLaunchedById(User.current().getId());
         genericBuild.setJenkinsMasterName(master);
-        genericBuild.setJenkinsMasterId(ElasticJenkinsUtil.getCurentMasterId());
+        genericBuild.setJenkinsMasterId(ElasticJenkinsUtil.getCurrentMasterId());
         genericBuild.setProjectId(projectId);
         try {
             if(Executor.currentExecutor() != null && Executor.currentExecutor().getOwner().getHostName() != null) {
@@ -106,7 +106,7 @@ public class ElasticManager {
         String json = gson.toJson(genericBuild);
 
         //Post the json to Elasticsearch
-        String eId = build.getId()+"_"+projectId+"_"+ElasticJenkinsUtil.getCurentMasterId();
+        String eId = build.getId()+"_"+projectId+"_"+ElasticJenkinsUtil.getCurrentMasterId();
         String uri = url+"/"+jenkinsBuildsIndex+"/"+jenkinsBuildsType+"/"+eId;
         String elasticSearchId = null;
         Type elasticsearchResulType = new TypeToken<ElasticsearchResult<GenericBuild>>(){}.getType();
@@ -114,7 +114,7 @@ public class ElasticManager {
         if (esr.getResult().equals("created") || esr.getResult().equals("updated")) elasticSearchId = esr.get_id();
 
         //If we can save the build we can remove the dequeued item
-        String queueUri = url+"/"+jenkinsQueueIndex+"/"+jenkinsQueueType+"/"+build.getQueueId()+"_"+projectId+"_"+ElasticJenkinsUtil.getCurentMasterId();
+        String queueUri = url+"/"+jenkinsQueueIndex+"/"+jenkinsQueueType+"/"+build.getQueueId()+"_"+projectId+"_"+ElasticJenkinsUtil.getCurrentMasterId();
         if(elasticSearchId != null)
             if(isItemExists(queueUri) && ! ElasticJenkinsUtil.elasticDelete(queueUri))
                 LOGGER.log(Level.SEVERE,"Cannot delete queued item:"+queueUri);
@@ -132,7 +132,7 @@ public class ElasticManager {
                               @Nonnull String status,
                               @Nullable File file) {
         String elasticSearchId = "";
-        String indexLogs = ElasticJenkinsUtil.getProperty("jenkins_logs");
+        String indexLogs = ElasticJenkinsUtil.getJenkinsLogsIndex();
 
         long size = 0;
         if (file != null && Files.exists(file.toPath())) {
@@ -268,7 +268,7 @@ public class ElasticManager {
     GenericBuild searchById(@Nonnull String id) {
 
         String uri = url+"/"+jenkinsBuildsIndex+"/"+jenkinsBuildsType+"/"+id+"/_source";
-        return gson.fromJson(ElasticJenkinsUtil.elasticGet(uri),GenericBuild.class);
+        return gsonGenericBuild.fromJson(ElasticJenkinsUtil.elasticGet(uri),GenericBuild.class);
     }
 
     /**
@@ -488,7 +488,7 @@ public class ElasticManager {
         genericBuild.setQueuedSince(waitingItem.getInQueueSince());
         genericBuild.setJenkinsMasterName(master);
         genericBuild.setStartupTime(ElasticJenkinsUtil.getStartupTime());
-        genericBuild.setJenkinsMasterId(ElasticJenkinsUtil.getCurentMasterId());
+        genericBuild.setJenkinsMasterId(ElasticJenkinsUtil.getCurrentMasterId());
 
 
         try {
@@ -503,7 +503,7 @@ public class ElasticManager {
         String json = gson.toJson(genericBuild);
 
         //Post the json to Elasticsearch
-        String eId = waitingItem.getId()+"_"+projectId+"_"+ElasticJenkinsUtil.getCurentMasterId();
+        String eId = waitingItem.getId()+"_"+projectId+"_"+ElasticJenkinsUtil.getCurrentMasterId();
         String uri = url+"/"+jenkinsQueueIndex+"/"+jenkinsQueueType+"/"+eId;
         String elasticSearchId = null;
         Type elasticsearchResulType = new TypeToken<ElasticsearchResult<GenericBuild>>(){}.getType();

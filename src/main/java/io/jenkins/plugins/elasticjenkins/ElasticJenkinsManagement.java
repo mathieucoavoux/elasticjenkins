@@ -149,7 +149,7 @@ public class ElasticJenkinsManagement extends ManagementLink {
         }
 
         //Check if the url is available
-        String status = ElasticJenkinsUtil.getElasticsearchStatus(persistenceStore);
+        String status = ElasticJenkinsUtil.getElasticSearchStatus(persistenceStore);
         if(! status.equals("green") && ! status.equals("yellow")) {
             LOGGER.log(Level.WARNING,"Elasticsearch cluster status is:"+status);
             return HttpResponses.redirectTo(".?badStatus");
@@ -165,7 +165,7 @@ public class ElasticJenkinsManagement extends ManagementLink {
 
         if(!ElasticJenkinsUtil.writeProperties(masterName,clusterName , persistenceStore,charset,jenkinsLogs,jenkinsBuilds,
                 jenkinsQueues,jenkinsClusterIndex,jenkinsManageIndex, jenkinsManageHealth))
-            return HttpResponses.redirectTo(".?error");
+            return HttpResponses.redirectTo(".?error2");
 
         //Check if the master exist already
         String masterId = null;

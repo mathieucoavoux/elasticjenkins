@@ -2,15 +2,16 @@ package io.jenkins.plugins.elasticjenkins.util;
 
 import com.google.gson.Gson;
 import com.jayway.jsonpath.JsonPath;
+import hudson.Functions;
 import hudson.model.*;
+import io.jenkins.plugins.elasticjenkins.TestsUtil;
 import io.jenkins.plugins.elasticjenkins.entity.GenericBuild;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpDelete;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
+import org.jenkinsci.plugins.workflow.job.WorkflowJob;
+import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 import org.junit.*;
+import org.junit.rules.TemporaryFolder;
 import org.jvnet.hudson.test.JenkinsRule;
-import org.mockito.Mockito;
+import org.jvnet.hudson.test.TestEnvironment;
 import org.powermock.api.mockito.PowerMockito;
 
 import java.io.*;
@@ -20,121 +21,48 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
-import static junit.framework.TestCase.fail;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assume.assumeThat;
+import static org.junit.Assume.assumeTrue;
+
 
 public class ElasticManagerTest  {
 
-    private static Logger LOGGER = Logger.getLogger(ElasticManagerTest.class.getName());
 
-    @Rule public JenkinsRule j = new JenkinsRule();
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
-    private static String testFolder = "elasticjenkins";
+    @Rule public JenkinsRule j = new JenkinsRule(){
 
-    public static String root = (System.getProperty("java.io.tmpdir"))+testFolder;
-    public static File testFile = new File(root);
+        private List<WebClient> clients = new ArrayList<WebClient>();
 
-
-
-    public static String master = "MASTERNAME";
-    public static String clusterName = "CLUSTER_NAME";
-    public String uniqueId = "20170428";
-    public String title = "PROJECT_NAME";
-    public String logIndex = "test_jenkins_logs";
-    public String buildsIndex = "test_jenkins_builds";
-    public String queueIndex = "test_jenkins_queues";
-    public String clusterIndex = "test_jenkins_manage_clusters";
-    public String mappingIndex = "test_jenkins_manage_mapping";
-    public String mappingHealth = "test_jenkins_manage_health";
-
-    public static String url = "http://192.168.44.1:9200";
-
-    public Computer computer;
-    public Node node;
-
-
-    public void deleleTest(String index, String type,String id) throws IOException {
-        HttpDelete httpDelete = new HttpDelete(url+"/"+index+"/"+type+"/"+id);
-        httpDelete.setHeader("Accept","application/json");
-        HttpClientBuilder builder = HttpClientBuilder.create();
-        CloseableHttpClient client = builder.build();
-        CloseableHttpResponse response = client.execute(httpDelete);
-    }
-
-    public void deleteTest(String index,String suffix) throws IOException {
-        HttpDelete httpDelete = new HttpDelete(url+"/"+index+"/"+suffix);
-        httpDelete.setHeader("Accept","application/json");
-        HttpClientBuilder builder = HttpClientBuilder.create();
-        CloseableHttpClient client = builder.build();
-        CloseableHttpResponse response = client.execute(httpDelete);
-    }
-
-    public void deleteIndices() throws IOException, InterruptedException {
-        List<String> list = new ArrayList<>();
-        list.add(logIndex);
-        list.add(buildsIndex);
-        list.add(queueIndex);
-        list.add(clusterIndex);
-        list.add(mappingIndex);
-        list.add(mappingHealth);
-        for(String uri : list) {
-            HttpDelete httpDelete = new HttpDelete(url+"/"+uri);
-            httpDelete.setHeader("Accept","application/json");
-            HttpClientBuilder builder = HttpClientBuilder.create();
-            CloseableHttpClient client = builder.build();
-            CloseableHttpResponse response = client.execute(httpDelete);
+        @Override
+        public void after() throws Exception {
+            super.after();
+            if(TestEnvironment.get() != null) {
+                try {
+                    TestEnvironment.get().dispose();
+                }catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
         }
-        Thread.sleep(2000);
-    }
+    };
+
+    private static String master = "MASTERNAME";
+    private static String clusterName = "CLUSTER_NAME";
+
+    TestsUtil testsUtil = new TestsUtil(j, temporaryFolder);
 
 
-    public Run<?,?> generateBuild(String id) throws IOException {
-        computer = j.jenkins.createComputer();
-        node = computer.getNode();
-        j.jenkins.setNumExecutors(2);
-
-        Long queueId = new Long(1);
-        String url = "/"+title+"/"+id;
-
-        Run build = Mockito.mock(Run.class);
-
-        StringParameterValue p1 = new StringParameterValue("parameter1","éeù");
-        StringParameterValue p2 = new StringParameterValue("parameter2","value2");
-        ParametersAction pa =  new ParametersAction(p1,p2);
-
-
-        List<ParametersAction> list = new ArrayList<ParametersAction>();
-        list.add(pa);
-        //Create Mock Job
-        Job job = Mockito.mock(Job.class);
-        job.setDisplayName(title);
-
-        Mockito.when(build.getUrl()).thenReturn(url);
-        Mockito.when(build.getId()).thenReturn(id);
-        Mockito.when(build.getActions(ParametersAction.class)).thenReturn(list);
-        Mockito.when(build.getParent()).thenReturn(job);
-        Mockito.when(build.getQueueId()).thenReturn(queueId);
-        Mockito.when(build.getDisplayName()).thenReturn(title);
-
-        return build;
-    }
-
-    @BeforeClass
-    public static void initialize() throws IOException {
-        if(! testFile.exists()) {
-            if(!testFile.mkdirs())
-                throw new IOException("Can not execute since the directory is not writtable: "+root);
-        }
-    }
 
     @Before
     public void setUp() throws IOException, InterruptedException {
-        //ElasticJenkinsUtil.writeProperties(master,url,"UTF-16",logIndex);
-        ElasticJenkinsUtil.writeProperties(master,clusterName , url,"UTF-8",logIndex,buildsIndex,queueIndex,clusterIndex,mappingIndex,mappingHealth );
-
+        testsUtil.reset();
     }
 
     /**
@@ -144,15 +72,18 @@ public class ElasticManagerTest  {
      * @throws IOException
      * @throws InterruptedException
      */
+    @Ignore
     @Test
     public void allTests() throws IOException, InterruptedException {
 
+        /*
         deleteIndices();
 
         createIndex();
-        //ElasticJenkinsManagement elasticJenkinsManagement = new ElasticJenkinsManagement();
-        //elasticJenkinsManagement.addJenkinsMaster(master,clusterName,"TEST_SERVER",master,clusterIndex);
-        //Thread.sleep(2000);
+        ElasticJenkinsManagement elasticJenkinsManagement = new ElasticJenkinsManagement();
+        elasticJenkinsManagement.addJenkinsMaster(master,clusterName,"TEST_SERVER",master,clusterIndex);
+        Thread.sleep(2000);
+        */
         //Add build
         //addBuild();
 
@@ -180,34 +111,55 @@ public class ElasticManagerTest  {
 
         //testRecoverBuilds();
 
-        testGetNodesByCluster();
+        //testGetNodesByCluster();
 
-        deleteIndices();
+        //deleteIndices();
 
     }
 
-    public void createIndex() {
-        ElasticManager em = new ElasticManager();
-        ElasticJenkinsUtil.createManageIndex();
-        ElasticJenkinsUtil.createHealthIndex();
+
+    @Ignore
+    @Test
+    public void startPipeline() throws Exception {
+        WorkflowJob workflowJob = testsUtil.genereatePipelineProject("oneStepPipeline.groovy");
+        // Enqueue a build of the Pipeline, wait for it to complete, and assert success
+        //WorkflowRun build = j.buildAndAssertSuccess(workflowJob);
+        //WorkflowRun b1 = j.assertBuildStatusSuccess(workflowJob.scheduleBuild2(0));
+        WorkflowRun b1 = workflowJob.scheduleBuild2(0).waitForStart();
+        assertNotNull(b1);
+        j.waitForCompletion(b1);
+        File logFile = b1.getLogFile();
+
+        j.assertBuildStatusSuccess(j.waitForCompletion(b1));
+        /*
+        assertFalse(b1.isBuilding());
+        //assertFalse(b1.isInProgress());
+        assertFalse(b1.isLogUpdated());
+        assert(b1.getResult().isCompleteBuild());
+        //assertTrue(b1.completed);
+        //assertTrue(b1.executionLoaded);
+        assertTrue(b1.getDuration() > 0);
+        // Assert that the console log contains the output we expect
+        //j.assertLogContains("hello", build);
+        */
     }
 
+    @Test
+    public void addBuild() throws IOException {
 
-    public void addBuild() throws IOException, InterruptedException {
-
-        Run<?,?> build = generateBuild("1");
+        Run<?,?> build = testsUtil.generateBuild("1");
         ElasticManager em = new ElasticManager();
-        String index = "myproject/myserver";
+        String index = "myproject_myserver";
         String type = "builds";
         String idElastic = em.addBuild(index,build);
-        assertTrue(idElastic.equals("1_"+index+"_"+master));
-        deleleTest(index,type,"1_"+index+"_"+master);
+        assertTrue(idElastic.equals("1_"+index+"_"+TestsUtil.masterId));
+        testsUtil.deleteTest(index,type,"1_"+index+"_"+TestsUtil.masterId);
     }
 
-
+    @Test
     public void updateBuild() throws IOException, InterruptedException {
         Thread.sleep(10000);
-        Run<?,?> build = generateBuild("1");
+        Run<?,?> build = testsUtil.generateBuild("1");
         ElasticManager em = new ElasticManager();
         String index = "jenkins_test";
         String type = "builds";
@@ -216,7 +168,8 @@ public class ElasticManagerTest  {
         List<String> logs = new ArrayList<>();
         logs.add("éer");
         logs.add("Line2");
-        File file = new File(root+"/"+fileName);
+        File subfolder = temporaryFolder.newFolder(TestsUtil.testFolder);
+        File file = new File(subfolder.getPath()+"/"+fileName);
         if(file.exists()) file.delete();
         BufferedWriter writer = new BufferedWriter(new FileWriter(file.getPath(),true));
         for(String row : logs)
@@ -224,28 +177,30 @@ public class ElasticManagerTest  {
         writer.close();
         PowerMockito.when(build.getLogFile()).thenReturn(file);
         String idUpdated = em.updateBuild(idElastic,"COMPLETED",file);
-        assertEquals("1_"+index+"_"+master,idUpdated);
+        assertEquals("1_"+index+"_"+TestsUtil.masterId,idUpdated);
         String idLog = em.searchById(idUpdated).getLogId();
         assertTrue(idLog != null);
-        deleteTest(logIndex,idLog);
-        deleleTest(index,type,"1_"+index+"_"+master);
+        testsUtil.deleteTest(TestsUtil.logIndex,idLog);
+        testsUtil.deleteTest(index,type,"1_"+index+"_"+TestsUtil.masterId);
         if(file.exists()) file.delete();
 
     }
 
+    @Test
     public void searchById() throws IOException, InterruptedException {
         Thread.sleep(10000);
-        Run<?,?> build = generateBuild("1");
+        Run<?,?> build = testsUtil.generateBuild("1");
         ElasticManager em = new ElasticManager();
         String index = "jenkins_test";
         String type = "builds";
         String fileName = "testUpdate2.log";
         String idElastic = em.addBuild(index,build);
-        assertTrue(idElastic.equals("1_"+index+"_"+master));
+        assertEquals(idElastic, "1_" + index + "_" + TestsUtil.masterId);
 
         List<String> logs = new ArrayList<>();
 
-        File file = new File(root+"/"+fileName);
+        File subfolder = temporaryFolder.newFolder(TestsUtil.testFolder);
+        File file = new File(subfolder.getPath()+"/"+fileName);
 
         if(file.exists()) file.delete();
 
@@ -270,20 +225,21 @@ public class ElasticManagerTest  {
             assertEquals(logs.get(ind),lineElastic);
         }
 
-        deleteTest(logIndex,idLog);
-        deleleTest(index,type,"1_"+index+"_"+master);
+        testsUtil.deleteTest(TestsUtil.logIndex,idLog);
+        testsUtil.deleteTest(index,type,"1_"+index+"_"+master);
         if(file.exists()) file.delete();
     }
 
+    @Test
     public void testGetPaginateBuildHistory() throws IOException, InterruptedException {
         ElasticManager em = new ElasticManager();
 
         String type = "builds";
-        Run<?,?> build = generateBuild("1");
+        Run<?,?> build = testsUtil.generateBuild("1");
         String hash = ElasticJenkinsUtil.getHash(build.getUrl().split(build.getId())[0]);
-        String projectId = em.addProjectMapping(hash,URLEncoder.encode(build.getUrl().split(build.getId())[0],ElasticJenkinsUtil.getProperty("elasticCharset")));
+        String projectId = em.addProjectMapping(hash,URLEncoder.encode(build.getUrl().split(build.getId())[0],ElasticJenkinsUtil.getCharset()));
         for(int i=1;i<10;i++) {
-            em.addBuild(projectId,generateBuild(Integer.toString(i)));
+            em.addBuild(projectId,testsUtil.generateBuild(Integer.toString(i)));
         }
         //Let elasticsearch save the entries correctly
         Thread.sleep(2000);
@@ -291,10 +247,11 @@ public class ElasticManagerTest  {
         assertEquals("4",list.get(0).getId());
         assertEquals("3",list.get(1).getId());
         for(int i=1;i<10;i++) {
-            deleleTest("jenkins_builds",type,Integer.toString(i)+"_"+master);
+            testsUtil.deleteTest("jenkins_builds",type,Integer.toString(i)+"_"+master);
         }
     }
 
+    @Test
     public void testAddProjectMapping() throws UnsupportedEncodingException {
         ElasticManager em = new ElasticManager();
         String index = "jenkins_test";
@@ -303,22 +260,24 @@ public class ElasticManagerTest  {
 
     }
 
+    @Test
     public void testFindByParameter() {
         ElasticManager em = new ElasticManager();
         List<GenericBuild> list = em.findByParameter("44b1edab813647ffecac78d81c4b8d22", "MyMaster2","Bonjour2");
     }
 
-
-    public void testGetProjectId() throws IOException, InterruptedException {
+    @Test
+    public void  testGetProjectId() throws IOException, InterruptedException {
         ElasticManager elasticManager = new ElasticManager();
-        Run<?,?> build = generateBuild("1");
+        Run<?,?> build = testsUtil.generateBuild("1");
         String hash = ElasticJenkinsUtil.getHash(build.getUrl().split(build.getId())[0]);
-        elasticManager.addProjectMapping(hash,URLEncoder.encode(build.getUrl().split(build.getId())[0],ElasticJenkinsUtil.getProperty("elasticCharset")));
+        elasticManager.addProjectMapping(hash,URLEncoder.encode(build.getUrl().split(build.getId())[0],ElasticJenkinsUtil.getCharset()));
         Thread.sleep(2000);
         String projectId = elasticManager.getProjectId(hash);
         assertTrue(projectId != null);
     }
 
+    @Test
     public void testAddMasterStartupAndFlag() {
         //Startup time
         Long startupTime = 1538245515043L;
@@ -326,13 +285,14 @@ public class ElasticManagerTest  {
         //Add jenkins startup in the health index
         ElasticManager elasticManager = new ElasticManager();
         String id = elasticManager.addMasterStartup();
-        String uri = url + "/" + mappingHealth + "/health/" + id;
+        String uri = TestsUtil.url + "/" + TestsUtil.mappingHealth + "/health/" + id;
         String json = ElasticJenkinsUtil.elasticGet(uri);
         String myMaster = JsonPath.parse(json).read("$._source.jenkinsMasterName");
         assertEquals(master,myMaster);
     }
 
 
+    @Test
     public void testGetUnavailableNode() throws InterruptedException {
         //Add a new jenkins startup
         Long startupTime = 1538245515044L;
@@ -340,21 +300,45 @@ public class ElasticManagerTest  {
         ElasticManager elasticManager = new ElasticManager();
         String id = elasticManager.addMasterStartup();
         //Update the health flag to a previous date
-        String uri = url + "/" + mappingHealth + "/health/" + id+"/_update";
+        String uri = TestsUtil.url + "/" + TestsUtil.mappingHealth + "/health/" + id+"/_update";
         String json = "{" +
                         "\"doc\" : {" +
                             "\"lastFlag\" : 1538245515045" +
                             "}"+
                         "}";
         ElasticJenkinsUtil.elasticPost(uri,json);
-        //Let some time to Elasticsearch to update the entry
-        Thread.sleep(3000);
+        //Loop until the entry has been updated
+        String searchUri = TestsUtil.url + "/" + TestsUtil.mappingHealth + "/health/_search";
+        String searchJson = "{"+
+                            "   \"query\" : {"+
+                                    "   \"bool\" : {"+
+                                            "   \"must\" : ["+
+                                                    "   { \"match\" : { \"lastFlag\" : 1538245515045}}"+
+                                                    "]"+
+                                            "}"+
+                                    "}"+
+                            "}";
+        String jsonResponse = ElasticJenkinsUtil.elasticPost(searchUri,searchJson);
+        int total = 0;
+        if(jsonResponse != null)
+            total = JsonPath.parse(jsonResponse).read("$.hits.total");
+        int maxRetry = 10;
+        int retry = 0;
+        while(total != 1 || retry > maxRetry) {
+            //Let some time to Elasticsearch to update the entry
+            Thread.sleep(1000);
+            jsonResponse = ElasticJenkinsUtil.elasticPost(searchUri,searchJson);
+            if(jsonResponse != null)
+                total = JsonPath.parse(ElasticJenkinsUtil.elasticPost(searchUri,searchJson)).read("$.hits.total");
+            retry =+ 1;
+        }
         //Check if the master is raised as unavailable
         List<String> list = elasticManager.getUnavailableNode();
         assertEquals(1,list.size());
         assertEquals(id,list.get(0));
     }
 
+    @Test
     public void testMarkToRecover() {
         //Add a new jenkins startup
         Long startupTime = 1538245515045L;
@@ -368,6 +352,7 @@ public class ElasticManagerTest  {
         assertTrue(map.get(id));
     }
 
+    @Test
     public void testRecoverBuilds() {
         //Add a new jenkins startup
         Long startupTime = 1538245515046L;
@@ -375,7 +360,7 @@ public class ElasticManagerTest  {
         ElasticManager elasticManager = new ElasticManager();
         String id = elasticManager.addMasterStartup();
         //Add an entry in the manage_cluster
-        String uriCluster = url+"/"+clusterIndex+"/clusters/";
+        String uriCluster = TestsUtil.url+"/"+TestsUtil.clusterIndex+"/clusters/";
         String jsonCluster = " {" +
                             "\"jenkinsMasterName\" : \""+master+"\","+
                             "\"clusterName\" : \""+clusterName+"\","+
@@ -393,7 +378,7 @@ public class ElasticManagerTest  {
         genericBuild.setJenkinsMasterId(masterId);
         Gson gson = new Gson();
         String jsonGeneric = gson.toJson(genericBuild);
-        String uriQueue = url+"/"+queueIndex+"/queues/";
+        String uriQueue = TestsUtil.url+"/"+TestsUtil.queueIndex+"/queues/";
         //Save this build in the queue index
         ElasticJenkinsUtil.elasticPost(uriQueue,jsonGeneric);
         //Recover the build
@@ -401,10 +386,13 @@ public class ElasticManagerTest  {
         assertTrue(result);
     }
 
+    @Test
     public void testGetNodesByCluster() throws InterruptedException {
-        String uri = url+"/"+clusterIndex+"/clusters";
+        //Delete previous master if they exists
+
+        String uri = TestsUtil.url+"/"+TestsUtil.clusterIndex+"/clusters";
         String jsonMaster1 = "{"+
-                                "\"jenkinsMasterName\" : \"master1\","+
+                                "\"jenkinsMasterName\" : \"MASTERNAME\","+
                                 "\"clusterName\" : \""+clusterName+"\","+
                                 "\"hostname\" : \"server1\""+
                             "}";
@@ -418,6 +406,7 @@ public class ElasticManagerTest  {
         Thread.sleep(3000);
         ElasticManager elasticManager = new ElasticManager();
         String nodesList = elasticManager.getNodesByCluster(clusterName);
-        assertEquals("master1 master2",nodesList);
+        assertTrue(nodesList.matches(".*master2.*"));
+        assertTrue(nodesList.matches(".*MASTERNAME.*"));
     }
 }
