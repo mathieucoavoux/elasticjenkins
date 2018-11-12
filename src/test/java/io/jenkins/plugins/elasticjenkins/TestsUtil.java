@@ -54,7 +54,7 @@ public class TestsUtil {
     public static String mappingHealth = "test_jenkins_manage_health";
 
     //public static String url = "http://192.168.66.1:9200";
-    public static String url = System.getProperty("elasticSearchUrl") != null ? System.getProperty("elasticSearchUrl") : "http://192.168.66.1:9200";
+    public static String url = System.getProperty("elasticSearchUrl") != null ? System.getProperty("elasticSearchUrl") : "http://localhost:9200";
     private Computer computer;
     private Node node;
 
@@ -161,7 +161,7 @@ public class TestsUtil {
         ElasticJenkinsUtil.createHealthIndex();
     }
 
-    private String loadResource(String name) {
+    public String loadResource(String name) {
         try {
             return new String(IOUtils.toByteArray(getClass().getResourceAsStream(name)));
         } catch (Throwable t) {

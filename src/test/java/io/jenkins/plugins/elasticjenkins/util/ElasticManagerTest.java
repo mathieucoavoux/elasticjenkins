@@ -65,85 +65,6 @@ public class ElasticManagerTest  {
         testsUtil.reset();
     }
 
-    /**
-     * All tests are in the same function as with encountered an issue
-     * with JenkinsRules when splitting tests in different methods
-     * We received an NullPointerException on some system.
-     * @throws IOException
-     * @throws InterruptedException
-     */
-    @Ignore
-    @Test
-    public void allTests() throws IOException, InterruptedException {
-
-        /*
-        deleteIndices();
-
-        createIndex();
-        ElasticJenkinsManagement elasticJenkinsManagement = new ElasticJenkinsManagement();
-        elasticJenkinsManagement.addJenkinsMaster(master,clusterName,"TEST_SERVER",master,clusterIndex);
-        Thread.sleep(2000);
-        */
-        //Add build
-        //addBuild();
-
-        //Update build
-        //updateBuild();
-
-        //Search by id
-        //searchById();
-
-        //Get pagination
-        //testGetPaginateBuildHistory();
-
-        //Test add project mapping
-        //testAddProjectMapping();
-
-        //testFindByParameter();
-
-        //testGetProjectId();
-
-        //testAddMasterStartupAndFlag();
-
-        //testGetUnavailableNode();
-
-        //testMarkToRecover();
-
-        //testRecoverBuilds();
-
-        //testGetNodesByCluster();
-
-        //deleteIndices();
-
-    }
-
-
-    @Ignore
-    @Test
-    public void startPipeline() throws Exception {
-        WorkflowJob workflowJob = testsUtil.genereatePipelineProject("oneStepPipeline.groovy");
-        // Enqueue a build of the Pipeline, wait for it to complete, and assert success
-        //WorkflowRun build = j.buildAndAssertSuccess(workflowJob);
-        //WorkflowRun b1 = j.assertBuildStatusSuccess(workflowJob.scheduleBuild2(0));
-        WorkflowRun b1 = workflowJob.scheduleBuild2(0).waitForStart();
-        assertNotNull(b1);
-        j.waitForCompletion(b1);
-        File logFile = b1.getLogFile();
-
-        j.assertBuildStatusSuccess(j.waitForCompletion(b1));
-        /*
-        assertFalse(b1.isBuilding());
-        //assertFalse(b1.isInProgress());
-        assertFalse(b1.isLogUpdated());
-        assert(b1.getResult().isCompleteBuild());
-        //assertTrue(b1.completed);
-        //assertTrue(b1.executionLoaded);
-        assertTrue(b1.getDuration() > 0);
-        // Assert that the console log contains the output we expect
-        //j.assertLogContains("hello", build);
-        */
-    }
-
     @Test
     public void addBuild() throws IOException {
 
@@ -324,13 +245,13 @@ public class ElasticManagerTest  {
             total = JsonPath.parse(jsonResponse).read("$.hits.total");
         int maxRetry = 10;
         int retry = 0;
-        while(total != 1 || retry > maxRetry) {
+        while(total != 1 && retry < maxRetry) {
             //Let some time to Elasticsearch to update the entry
             Thread.sleep(1000);
             jsonResponse = ElasticJenkinsUtil.elasticPost(searchUri,searchJson);
             if(jsonResponse != null)
                 total = JsonPath.parse(ElasticJenkinsUtil.elasticPost(searchUri,searchJson)).read("$.hits.total");
-            retry =+ 1;
+            retry = retry + 1;
         }
         //Check if the master is raised as unavailable
         List<String> list = elasticManager.getUnavailableNode();
