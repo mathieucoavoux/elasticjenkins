@@ -1,19 +1,18 @@
-sudo: true
-
 language: java
 
+sudo: true
+
 jdk:
-- oraclejdk8
+  - openjdk8
 
 services:
   - docker
 
-before_install:
+before_script:
   - docker pull elasticsearch:6.4.2
   - docker network create somenetwork
   - docker run -d --name elasticsearch --net somenetwork -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" elasticsearch:6.4.2
 
-script: mvn test
-
-after_script:
-    - docker rm -f elasticsearch
+script:
+  - mvn test
+  - docker rm -f elasticsearch
