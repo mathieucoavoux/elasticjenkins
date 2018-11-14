@@ -1,5 +1,7 @@
 # ElasticJenkins plugin
 
+[![travis-ci](https://travis-ci.org/mathieucoavoux/elasticjenkins.svg?branch=dev)](https://travis-ci.org/mathieucoavoux/elasticjenkins)
+
 ## Disclaimer
 Copyright (c) 2018, Mathieu COAVOUX
 
