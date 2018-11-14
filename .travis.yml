@@ -16,3 +16,6 @@ before_script:
 script:
   - mvn test
   - docker rm -f elasticsearch
+
+after_success:
+  - mvn clean test jacoco:report coveralls:report

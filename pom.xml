@@ -45,6 +45,7 @@
 
         <!-- maven plugins versions -->
         <maven-coveralls.version>4.3.0</maven-coveralls.version>
+        <maven-jacoco.version>0.8.1</maven-jacoco.version>
     </properties>
     <name>ElasticJenkins Plugin</name>
     <description>This plugin stores build result and output to Elasticsearch</description>
@@ -264,6 +265,19 @@
                 <groupId>org.eluder.coveralls</groupId>
                 <artifactId>coveralls-maven-plugin</artifactId>
                 <version>${maven-coveralls.version}</version>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${maven-jacoco.version}</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
