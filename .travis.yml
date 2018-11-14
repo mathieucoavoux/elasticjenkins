@@ -14,8 +14,5 @@ before_script:
   - docker run -d --name elasticsearch --net somenetwork -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" elasticsearch:6.4.2
 
 script:
-  - mvn test
+  - mvn test jacoco:report coveralls:report
   - docker rm -f elasticsearch
-
-after_success:
-  - mvn clean test jacoco:report coveralls:report
