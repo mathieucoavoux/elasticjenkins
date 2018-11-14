@@ -1,6 +1,7 @@
 # ElasticJenkins plugin
 
 [![travis-ci](https://travis-ci.org/mathieucoavoux/elasticjenkins.svg?branch=master)](https://travis-ci.org/mathieucoavoux/elasticjenkins)
+[![coveralls](https://coveralls.io/repos/github/mathieucoavoux/elasticjenkins/badge.svg?branch=master)](https://coveralls.io/github/mathieucoavoux/elasticjenkins?branch=master)
 
 ## Disclaimer
 Copyright (c) 2018, Mathieu COAVOUX
