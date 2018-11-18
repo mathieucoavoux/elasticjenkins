@@ -200,7 +200,7 @@ public class ElasticJenkinsManagement extends ManagementLink {
         String json = gson.toJson(em);
         Type elasticsearchResulType = new TypeToken<ElasticsearchResult<GenericBuild>>(){}.getType();
         ElasticsearchResult esr = gson.fromJson(ElasticJenkinsUtil.elasticPost(uri,json),elasticsearchResulType);
-        return esr.get_id() != null ? true : false;
+        return esr.getId() != null ? true : false;
     }
 
 }

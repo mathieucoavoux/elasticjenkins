@@ -2,22 +2,13 @@ package io.jenkins.plugins.elasticjenkins.widgets;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import hudson.Functions;
-import hudson.model.ModelObject;
-import io.jenkins.plugins.elasticjenkins.ElasticJenkins;
+
 import io.jenkins.plugins.elasticjenkins.entity.GenericBuild;
-import io.jenkins.plugins.elasticjenkins.util.ElasticJenkinsUtil;
 import io.jenkins.plugins.elasticjenkins.util.ElasticManager;
-import jnr.ffi.annotations.In;
-//import org.jenkinsci.Symbol;
 
 import hudson.Extension;
 import hudson.widgets.Widget;
 
-import org.kohsuke.stapler.Header;
-import org.kohsuke.stapler.Stapler;
-import org.kohsuke.stapler.StaplerRequest;
-import org.kohsuke.stapler.StaplerResponse;
 import org.kohsuke.stapler.bind.JavaScriptMethod;
 
 import java.util.List;

@@ -3,9 +3,6 @@ package io.jenkins.plugins.elasticjenkins;
 import hudson.model.*;
 import hudson.model.queue.QueueTaskFuture;
 import io.jenkins.plugins.elasticjenkins.entity.GenericBuild;
-import io.jenkins.plugins.elasticjenkins.entity.Parameters;
-import io.jenkins.plugins.elasticjenkins.util.ElasticJenkinsUtil;
-import io.jenkins.plugins.elasticjenkins.util.ElasticManager;
 import jenkins.model.Jenkins;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 

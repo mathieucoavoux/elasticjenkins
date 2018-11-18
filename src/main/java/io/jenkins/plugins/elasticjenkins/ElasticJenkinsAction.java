@@ -2,9 +2,7 @@ package io.jenkins.plugins.elasticjenkins;
 
 
 import com.google.gson.Gson;
-import com.thoughtworks.xstream.annotations.XStreamOmitField;
 
-import hudson.Extension;
 import hudson.console.AnnotatedLargeText;
 import hudson.model.*;
 import hudson.slaves.ComputerLauncher;
@@ -14,7 +12,6 @@ import io.jenkins.plugins.elasticjenkins.util.ElasticJenkinsUtil;
 
 import io.jenkins.plugins.elasticjenkins.util.ElasticManager;
 
-import jenkins.model.Jenkins;
 import jenkins.model.RunAction2;
 import org.apache.commons.jelly.XMLOutput;
 
@@ -30,16 +27,12 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class ElasticJenkinsAction extends ComputerLauncher implements RunAction2 {
-//@Extension
-//public class ElasticJenkinsAction implements RootAction {
+
     private AbstractProject<?,?> project;
 
     private static final Logger LOGGER = Logger.getLogger(ElasticJenkinsAction.class.getName());

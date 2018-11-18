@@ -1,6 +1,6 @@
 package io.jenkins.plugins.elasticjenkins.entity;
 
-import java.util.List;
+import com.google.gson.annotations.SerializedName;
 
 /**
  * This entity is used to parse Eleasticsearch result
@@ -11,62 +11,69 @@ import java.util.List;
  *
  */
 public class ElasticsearchResult<T> {
-    protected String _index;
+    @SerializedName("_index")
+    protected String index;
 
-    protected String _type;
+    @SerializedName("_type")
+    protected String type;
 
-    protected String _id;
+    @SerializedName("_id")
+    protected String id;
 
-    protected String _version;
+    @SerializedName("_version")
+    protected String version;
 
     protected String result;
 
-    protected String _seq_no;
+    @SerializedName("_seq_no")
+    protected String seqNo;
 
-    protected String _primary_term;
+    @SerializedName("_primary_term")
+    protected String primaryTerm;
 
 
-    public T get_source() {
-        return _source;
+    public T getSource() {
+        return source;
     }
 
-    public void set_source(T _source) {
-        this._source = _source;
+    public void setSource(T source) {
+        this.source = source;
     }
 
-    protected T _source;
+    @SerializedName("_source")
+    protected T source;
 
 
-    public String get_index() {
-        return _index;
+    public String getIndex() {
+        return index;
     }
 
-    public void set_index(String _index) {
-        this._index = _index;
+    public void setIndex(String index) {
+        this.index = index;
     }
 
-    public String get_type() {
-        return _type;
+    public String getType() {
+        return type;
     }
 
-    public void set_type(String _type) {
-        this._type = _type;
+    public void setType(String type) {
+        this.type = type;
     }
 
-    public String get_id() {
-        return _id;
+    public String getId() {
+        return id;
     }
 
-    public void set_id(String _id) {
-        this._id = _id;
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public String get_version() {
-        return _version;
+    public String getVersion() {
+        return version;
     }
 
-    public void set_version(String _version) {
-        this._version = _version;
+    public void setVersion(String version) {
+        this.version = version;
     }
 
     public String getResult() {
@@ -77,20 +84,20 @@ public class ElasticsearchResult<T> {
         this.result = result;
     }
 
-    public String get_seq_no() {
-        return _seq_no;
+    public String getSeqNo() {
+        return seqNo;
     }
 
-    public void set_seq_no(String _seq_no) {
-        this._seq_no = _seq_no;
+    public void setSeqNo(String seqNo) {
+        this.seqNo = seqNo;
     }
 
-    public String get_primary_term() {
-        return _primary_term;
+    public String getPrimaryTerm() {
+        return primaryTerm;
     }
 
-    public void set_primary_term(String _primary_term) {
-        this._primary_term = _primary_term;
+    public void setPrimaryTerm(String primaryTerm) {
+        this.primaryTerm = primaryTerm;
     }
 
 

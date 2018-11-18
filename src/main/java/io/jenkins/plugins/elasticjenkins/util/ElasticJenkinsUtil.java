@@ -317,7 +317,7 @@ public class ElasticJenkinsUtil {
         Integer total = JsonPath.parse(jsonResponse).read("$.hits.total");
         if (total != 1)
             return null;
-        return JsonPath.parse(jsonResponse).read("$.hits.hits[0]._id").toString();
+        return JsonPath.parse(jsonResponse).read("$.hits.hits[0].id").toString();
     }
 
     public static void createManageIndex() {
@@ -649,7 +649,7 @@ public class ElasticJenkinsUtil {
         }
         Gson gson = new GsonBuilder().create();
         return  gson.fromJson(JsonPath.parse(jsonResponse).read(
-                "$.hits.hits[0]._id").toString(),String.class);
+                "$.hits.hits[0].id").toString(),String.class);
     }
 
     static JsonDeserializer<ParameterValue> getPVDeserializer() {

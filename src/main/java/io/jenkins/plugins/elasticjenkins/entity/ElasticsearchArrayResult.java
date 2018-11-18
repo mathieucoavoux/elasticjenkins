@@ -1,5 +1,7 @@
 package io.jenkins.plugins.elasticjenkins.entity;
 
+import com.google.gson.annotations.SerializedName;
+
 import java.util.List;
 
 public class ElasticsearchArrayResult<T> {
@@ -11,25 +13,29 @@ public class ElasticsearchArrayResult<T> {
         this.took = took;
     }
 
-    public String getTimed_out() {
-        return timed_out;
+    public String getTimedOut() {
+        return timedOut;
     }
 
-    public void setTimed_out(String timed_out) {
-        this.timed_out = timed_out;
+    public void setTimedOut(String timedOut) {
+        this.timedOut = timedOut;
     }
 
-    public Shards get_shards() {
-        return _shards;
+    public Shards getShards() {
+        return shards;
     }
 
-    public void set_shards(Shards _shards) {
-        this._shards = _shards;
+    public void setShards(Shards shards) {
+        this.shards = shards;
     }
 
     protected String took;
-    protected String timed_out;
-    protected Shards _shards;
+
+    @SerializedName("timed_out")
+    protected String timedOut;
+
+    @SerializedName("_shards")
+    protected Shards shards;
 
     public Hits<T> getHits() {
         return hits;
@@ -91,12 +97,12 @@ public class ElasticsearchArrayResult<T> {
             this.total = total;
         }
 
-        public String getMax_score() {
-            return max_score;
+        public String getMaxScore() {
+            return maxScore;
         }
 
-        public void setMax_score(String max_score) {
-            this.max_score = max_score;
+        public void setMaxScore(String maxScore) {
+            this.maxScore = maxScore;
         }
 
         public List<ElasticsearchResult<T>> getHits() {
@@ -107,7 +113,8 @@ public class ElasticsearchArrayResult<T> {
             this.hits = hits;
         }
 
-        protected String max_score;
+        @SerializedName("max_score")
+        protected String maxScore;
 
         protected  List<ElasticsearchResult<T>> hits;
     }

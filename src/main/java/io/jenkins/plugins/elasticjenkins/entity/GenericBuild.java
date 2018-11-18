@@ -1,21 +1,10 @@
 package io.jenkins.plugins.elasticjenkins.entity;
 
-
-
-import hudson.console.AnnotatedLargeText;
-
-import hudson.model.Job;
 import hudson.model.ParametersAction;
-import hudson.model.Run;
-import jenkins.model.Jenkins;
-import org.apache.commons.jelly.XMLOutput;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.File;
-import java.io.IOException;
 
-import java.nio.charset.Charset;
 import java.util.List;
 
 public class GenericBuild {
@@ -237,10 +226,5 @@ public class GenericBuild {
 
     public void setExecutedOn(String executedOn) {
         this.executedOn = executedOn;
-    }
-
-
-    public void writeLogTo(XMLOutput out) throws IOException {
-        new AnnotatedLargeText<GenericBuild>(new File(Jenkins.getInstance().getRootDir(),"/myfile.txt"),Charset.defaultCharset(),true,this).writeLogTo(0,out.asWriter());
     }
 }

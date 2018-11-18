@@ -208,7 +208,7 @@ public class ElasticManagerTest  {
         String id = elasticManager.addMasterStartup();
         String uri = TestsUtil.url + "/" + TestsUtil.mappingHealth + "/health/" + id;
         String json = ElasticJenkinsUtil.elasticGet(uri);
-        String myMaster = JsonPath.parse(json).read("$._source.jenkinsMasterName");
+        String myMaster = JsonPath.parse(json).read("$.source.jenkinsMasterName");
         assertEquals(master,myMaster);
     }
 
@@ -288,7 +288,7 @@ public class ElasticManagerTest  {
                             "\"hostname\" : \"MYHOST\""+
                       "}";
         String jsonResponseCluster = ElasticJenkinsUtil.elasticPost(uriCluster,jsonCluster);
-        String masterId = JsonPath.parse(jsonResponseCluster).read("$._id");
+        String masterId = JsonPath.parse(jsonResponseCluster).read("$.id");
         //Create a new GenericBuild
         GenericBuild genericBuild = new GenericBuild();
         genericBuild.setId("1");
