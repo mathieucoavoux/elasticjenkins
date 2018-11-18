@@ -45,7 +45,7 @@ public class ElasticsearchArrayResultTest {
         String buildJson = gson.toJson(generateBuild());
         TestsUtil.elasticPost(uriBuild,buildJson);
 
-        String uri = uriBuild+"_search";
+        String uri = uriBuild+"_search?request_cache=false";
         String jsonResponse = TestsUtil.elasticGet(uri);
         int retry = 0;
         int maxRetry = 20;
@@ -64,8 +64,10 @@ public class ElasticsearchArrayResultTest {
         int retry2 = 0;
         int maxRetry2 = 20;
         while (! "1".equals(list.hits.getTotal()) && retry2 < maxRetry2) {
+            jsonResponse = TestsUtil.elasticGet(uri);
             list = gson.fromJson(jsonResponse,elasticsearchArrayResulType);
             retry2 = retry2 + 1;
+            Thread.sleep(1000);
         }
         assertEquals("1",list.hits.getTotal());
     }
