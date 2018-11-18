@@ -216,7 +216,7 @@ public class ElasticManager {
                 "   },\n" +
                 " \"size\" : "+paginationSize+",\n" +
                 " \"from\" : "+paginationStart+",\n" +
-                " \"sort\" :  { \"id\" : { \"order\" : \"desc\" } }\n" +
+                " \"sort\" :  { \"_id\" : { \"order\" : \"desc\" } }\n" +
                 "}";
 
         return getGenericBuildsFromJson(ElasticJenkinsUtil.elasticPost(uri,json));
@@ -267,7 +267,7 @@ public class ElasticManager {
     @VisibleForTesting
     GenericBuild searchById(@Nonnull String id) {
 
-        String uri = url+"/"+jenkinsBuildsIndex+"/"+jenkinsBuildsType+"/"+id+"/source";
+        String uri = url+"/"+jenkinsBuildsIndex+"/"+jenkinsBuildsType+"/"+id+"/_source";
         return gsonGenericBuild.fromJson(ElasticJenkinsUtil.elasticGet(uri),GenericBuild.class);
     }
 
@@ -277,7 +277,7 @@ public class ElasticManager {
      * @return the log output formatted in JSON
      */
     public String getLogOutputId(@Nonnull String id) {
-        String uri = url+"/"+jenkinsBuildsIndex+"/"+jenkinsBuildsType+"/"+id+"/source";
+        String uri = url+"/"+jenkinsBuildsIndex+"/"+jenkinsBuildsType+"/"+id+"/_source";
         return gson.fromJson(JsonPath.parse(ElasticJenkinsUtil.elasticGet(uri)).read("$.logId").toString(),String.class);
     }
 
@@ -288,7 +288,7 @@ public class ElasticManager {
      * @return file where the log has been written
      */
     public File getLogOutput(@Nonnull String suffix,@Nonnull String id) {
-        String uri = url+"/"+suffix+"/source";
+        String uri = url+"/"+suffix+"/_source";
 
         File file = new File(Jenkins.getInstance().getRootDir(),"/"+id);
         BufferedWriter writer = null;
@@ -407,9 +407,9 @@ public class ElasticManager {
                     "}";
             LOGGER.log(Level.FINEST,"Mapping uri: {0}, json : {1}",new Object[]{uri,jsonUpdate});
             jsonResponse = ElasticJenkinsUtil.elasticPost(uri.concat("/"),jsonUpdate);
-            eid = JsonPath.parse(jsonResponse).read("$.id");
+            eid = JsonPath.parse(jsonResponse).read("$._id");
         }else{
-            eid = JsonPath.parse(jsonResponse).read("$.hits.hits[0].id");
+            eid = JsonPath.parse(jsonResponse).read("$.hits.hits[0]._id");
         }
         return eid;
     }
@@ -558,7 +558,7 @@ public class ElasticManager {
         }
 
         return  gson.fromJson(JsonPath.parse(jsonResponse).read(
-                "$.hits.hits[0].id").toString(),String.class);
+                "$.hits.hits[0]._id").toString(),String.class);
     }
 
     /**
@@ -579,7 +579,7 @@ public class ElasticManager {
                 "},\n" +
                 " \"size\" : 3,\n" +
                 " \"from\" : 0,\n" +
-                " \"sort\" :  { \"id\" : { \"order\" : \"desc\" } }\n" +
+                " \"sort\" :  { \"_id\" : { \"order\" : \"desc\" } }\n" +
                 "}";
 
         String jsonResponse = ElasticJenkinsUtil.elasticPost(uri,jsonReq);
@@ -612,7 +612,7 @@ public class ElasticManager {
                 "},\n" +
                 " \"size\" : 3,\n" +
                 " \"from\" : 0,\n" +
-                " \"sort\" :  { \"id\" : { \"order\" : \"desc\" } }\n" +
+                " \"sort\" :  { \"_id\" : { \"order\" : \"desc\" } }\n" +
                 "}";
 
         String jsonResponse = ElasticJenkinsUtil.elasticPost(uri,jsonReq);
@@ -720,7 +720,7 @@ public class ElasticManager {
         int number = JsonPath.parse(jsonResponse).read("$.count");
         //If so get the list
         if(number > 0) {
-            String jsonList = ElasticJenkinsUtil.elasticPost(uri+"_search?source=false",json);
+            String jsonList = ElasticJenkinsUtil.elasticPost(uri+"_search?_source=false",json);
             Type elasticsearchArrayResulType = new TypeToken<ElasticsearchArrayResult<Object>>(){}.getType();
             ElasticsearchArrayResult<HealthCheck> elasticsearchArrayResult = gson.fromJson(jsonList,elasticsearchArrayResulType);
             elasticsearchArrayResult.getHits().getHits().forEach( e -> listHealthIds.add(e.getId()));
@@ -748,7 +748,7 @@ public class ElasticManager {
         //Get Jenkins name, cluster and startupTime with the id
         boolean success = true;
         String uri = url+"/"+jenkinsManageHealth+"/health/"+id;
-        HealthCheck node = gson.fromJson(ElasticJenkinsUtil.elasticGet(uri+"/source"),HealthCheck.class);
+        HealthCheck node = gson.fromJson(ElasticJenkinsUtil.elasticGet(uri+"/_source"),HealthCheck.class);
         //Check the masterId based on those info
         String masterId = getMasterIdByNameAndCluster(node.getJenkinsMasterName(),node.getClusterName()).get(0);
         //Return all builds in QUEUE with this id
@@ -783,7 +783,7 @@ public class ElasticManager {
                     "},\n" +
                     " \"size\" : 99,\n" +
                     " \"from\" : "+ind+",\n" +
-                    " \"sort\" :  { \"id\" : { \"order\" : \"desc\" } }\n" +
+                    " \"sort\" :  { \"_id\" : { \"order\" : \"desc\" } }\n" +
                     "}";
 
             ind = ind + 1;

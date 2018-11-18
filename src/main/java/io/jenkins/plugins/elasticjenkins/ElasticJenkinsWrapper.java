@@ -79,14 +79,14 @@ public class ElasticJenkinsWrapper extends SimpleBuildWrapper implements Seriali
             String buildUrl = build.getUrl().split("/"+build.getId()+"/$")[0];
 			String index = ElasticJenkinsUtil.getHash(buildUrl);
 			try {
-				this.projectId = em.addProjectMapping(index,URLEncoder.encode(buildUrl,ElasticJenkinsUtil.getProperty("elasticCharset")));
+				this.projectId = em.addProjectMapping(index,URLEncoder.encode(buildUrl,ElasticJenkinsUtil.getCharset()));
 				if( ElasticJenkinsUtil.isEmpty) {
 					ElasticJenkinsUtil elasticJenkinsUtil = new ElasticJenkinsUtil();
 					elasticJenkinsUtil.setIsEmpty(false);
 				}
 
 			} catch (UnsupportedEncodingException e) {
-				LOGGER.log(Level.SEVERE,"Charset not supported:"+ElasticJenkinsUtil.getProperty("elasticCharset"));
+				LOGGER.log(Level.SEVERE,"Charset not supported:"+ElasticJenkinsUtil.getCharset());
 			}
 			LOGGER.log(Level.FINEST,"Job hash: "+index);
 			id = em.addBuild(projectId,build);
