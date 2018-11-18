@@ -1,5 +1,6 @@
 package io.jenkins.plugins.elasticjenkins;
 
+import com.google.gson.*;
 import hudson.model.*;
 import io.jenkins.plugins.elasticjenkins.util.ElasticJenkinsUtil;
 import io.jenkins.plugins.elasticjenkins.util.ElasticManager;
@@ -22,6 +23,7 @@ import org.powermock.api.mockito.PowerMockito;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -350,5 +352,18 @@ public class TestsUtil {
         }
 
         return result;
+    }
+
+    public static JsonDeserializer<ParameterValue> getPVDeserializer() {
+        return new JsonDeserializer<ParameterValue>() {
+            @Override
+            public ParameterValue deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
+                JsonObject jsonObject = jsonElement.getAsJsonObject();
+                return new StringParameterValue(
+                        jsonObject.get("name").getAsString(),
+                        jsonObject.get("value").getAsString()
+                );
+            }
+        };
     }
 }
