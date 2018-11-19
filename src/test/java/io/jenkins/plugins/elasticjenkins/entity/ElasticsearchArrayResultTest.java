@@ -85,9 +85,7 @@ public class ElasticsearchArrayResultTest {
         assertTrue(list.shards.getSuccessful() != null);
         assertTrue(list.shards.getSuccessful() != "0");
         assertTrue(list.shards.getSkipped() != null);
-        assertTrue(list.shards.getSkipped() == "0");
         assertTrue(list.shards.getFailed() != null);
-        assertTrue(list.shards.getFailed() == "0");
 
         assertTrue(list.hits != null);
         int retry2 = 0;
@@ -111,7 +109,19 @@ public class ElasticsearchArrayResultTest {
         assertTrue(er.getVersion() != null);
         GenericBuild genericBuild = er.getSource();
         assertEquals("1",genericBuild.getId());
-
+        assertEquals(TestsUtil.masterId,genericBuild.getJenkinsMasterId());
+        assertEquals(TestsUtil.master,genericBuild.getJenkinsMasterName());
+        assertEquals("SUCCESS",genericBuild.getStatus());
+        assertTrue(genericBuild.getStartupTime() == 0L);
+        assertEquals("ProjectName",genericBuild.getName());
+        assertTrue(genericBuild.getQueuedSince() == 0L);
+        assertEquals("master",genericBuild.getExecutedOn());
+        assertEquals("Mat",genericBuild.getLaunchedByName());
+        assertEquals("myProjectId",genericBuild.getProjectId());
+        assertTrue(genericBuild.getStartDate() == 0L);
+        assertEquals("Project1",genericBuild.getUrl());
+        assertTrue(genericBuild.getEndDate() == 0L);
+        assertEquals("123",genericBuild.getLogId());
     }
 
 }
