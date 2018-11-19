@@ -101,12 +101,7 @@ public class ElasticsearchArrayResultTest {
         assertTrue(listER.size() == 1);
         ElasticsearchResult<GenericBuild> er = listER.get(0);
         assertTrue(er.getId() != null);
-        assertTrue(er.getResult() != null);
         assertTrue(er.getIndex() != null);
-        assertTrue(er.getPrimaryTerm() != null);
-        assertTrue(er.getSeqNo() != null);
-        assertTrue(er.getType() != null);
-        assertTrue(er.getVersion() != null);
         GenericBuild genericBuild = er.getSource();
         assertEquals("1",genericBuild.getId());
         assertEquals(TestsUtil.masterId,genericBuild.getJenkinsMasterId());
