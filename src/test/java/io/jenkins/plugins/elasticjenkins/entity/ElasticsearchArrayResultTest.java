@@ -120,9 +120,6 @@ public class ElasticsearchArrayResultTest {
         List<ParametersAction> listParams = genericBuild.getParameters();
         for(ParametersAction pa : listParams) {
             assertTrue(pa.getAllParameters().size() > 0);
-            for(ParameterValue pv : pa.getAllParameters()) {
-                assertEquals("MyName",pv.getName());
-            }
         }
         String jsonPost = "{ \"query\" : { \n" +
                 " \"bool\" : {\n" +
