@@ -97,7 +97,7 @@ public class ElasticJenkinsIntegrationTest {
                 //Check if there is one build in SUCCESS status
                 List<GenericBuild> list = elasticManager.getPaginateBuildHistory(hash, "clusters" , 5, "0");
                 String result = list.size() == 1 ? list.get(0).getStatus() : null;
-                int maxRetry = 20;
+                int maxRetry = 40;
                 int retry = 0;
                 while((list.size() == 0 ||  result != "SUCCESS") && retry < maxRetry ) {
                     Thread.sleep(1000);
