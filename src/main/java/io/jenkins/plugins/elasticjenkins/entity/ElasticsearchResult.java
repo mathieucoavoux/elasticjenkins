@@ -36,10 +36,6 @@ public class ElasticsearchResult<T> {
         return source;
     }
 
-    public void setSource(T source) {
-        this.source = source;
-    }
-
     @SerializedName("_source")
     protected T source;
 
@@ -48,32 +44,16 @@ public class ElasticsearchResult<T> {
         return index;
     }
 
-    public void setIndex(String index) {
-        this.index = index;
-    }
-
     public String getType() {
         return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
     }
 
     public String getId() {
         return id;
     }
 
-    public void setId(String id) {
-        this.id = id;
-    }
-
     public String getVersion() {
         return version;
-    }
-
-    public void setVersion(String version) {
-        this.version = version;
     }
 
     public String getResult() {
@@ -88,21 +68,8 @@ public class ElasticsearchResult<T> {
         return seqNo;
     }
 
-    public void setSeqNo(String seqNo) {
-        this.seqNo = seqNo;
-    }
-
     public String getPrimaryTerm() {
         return primaryTerm;
     }
-
-    public void setPrimaryTerm(String primaryTerm) {
-        this.primaryTerm = primaryTerm;
-    }
-
-
-
-
-
 
 }

@@ -9,24 +9,12 @@ public class ElasticsearchArrayResult<T> {
         return took;
     }
 
-    public void setTook(String took) {
-        this.took = took;
-    }
-
     public String getTimedOut() {
         return timedOut;
     }
 
-    public void setTimedOut(String timedOut) {
-        this.timedOut = timedOut;
-    }
-
     public Shards getShards() {
         return shards;
-    }
-
-    public void setShards(Shards shards) {
-        this.shards = shards;
     }
 
     protected String took;
@@ -60,24 +48,12 @@ public class ElasticsearchArrayResult<T> {
             return successful;
         }
 
-        public void setSuccessful(String successful) {
-            this.successful = successful;
-        }
-
         public String getSkipped() {
             return skipped;
         }
 
-        public void setSkipped(String skipped) {
-            this.skipped = skipped;
-        }
-
         public String getFailed() {
             return failed;
-        }
-
-        public void setFailed(String failed) {
-            this.failed = failed;
         }
 
         public String total;
@@ -99,10 +75,6 @@ public class ElasticsearchArrayResult<T> {
 
         public String getMaxScore() {
             return maxScore;
-        }
-
-        public void setMaxScore(String maxScore) {
-            this.maxScore = maxScore;
         }
 
         public List<ElasticsearchResult<T>> getHits() {

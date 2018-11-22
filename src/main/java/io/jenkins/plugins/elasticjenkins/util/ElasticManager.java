@@ -75,6 +75,7 @@ public class ElasticManager {
 
         List<ParametersAction> parametersActions = build.getActions(ParametersAction.class);
         if(parametersActions.size() > 0) {
+            /*
             List<Parameters> listParameters = new ArrayList<>();
             for (ParametersAction parametersAction : parametersActions) {
                 List<ParameterValue> parameterValues = parametersAction.getAllParameters();
@@ -87,6 +88,7 @@ public class ElasticManager {
                 }
 
             }
+            */
             genericBuild.setParametersAction(parametersActions);
         }
         genericBuild.setLaunchedByName(User.current().getDisplayName());
@@ -470,6 +472,7 @@ public class ElasticManager {
 
         List<ParametersAction> parametersActions = waitingItem.getActions(ParametersAction.class);
         if(parametersActions.size() > 0) {
+            /*
             List<Parameters> listParameters = new ArrayList<>();
             for (ParametersAction parametersAction : parametersActions) {
                 List<ParameterValue> parameterValues = parametersAction.getAllParameters();
@@ -482,6 +485,7 @@ public class ElasticManager {
                 }
 
             }
+            */
             genericBuild.setParametersAction(parametersActions);
         }
         genericBuild.setParametersAction(parametersActions);

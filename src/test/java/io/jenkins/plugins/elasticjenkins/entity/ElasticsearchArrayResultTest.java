@@ -61,7 +61,6 @@ public class ElasticsearchArrayResultTest {
 
     @Test
     public void testArray() throws InterruptedException {
-        //Gson gson = new GsonBuilder().create();
         Gson gson = new GsonBuilder().registerTypeAdapter(ParameterValue.class,TestsUtil.getPVDeserializer()).create();
         //Get Shards of the Elasticsearch cluster
         String uriBuild = url+"/"+TestsUtil.buildsIndex+"/builds/";
@@ -117,6 +116,30 @@ public class ElasticsearchArrayResultTest {
         assertEquals("Project1",genericBuild.getUrl());
         assertTrue(genericBuild.getEndDate() == 0L);
         assertEquals("123",genericBuild.getLogId());
+        assertTrue(genericBuild.getParameters().size() > 0);
+        List<ParametersAction> listParams = genericBuild.getParameters();
+        for(ParametersAction pa : listParams) {
+            assertTrue(pa.getAllParameters().size() > 0);
+            for(ParameterValue pv : pa.getAllParameters()) {
+                assertEquals("MyName",pv.getName());
+            }
+        }
+        String jsonPost = "{ \"query\" : { \n" +
+                " \"bool\" : {\n" +
+                " \"must\" : [\n" +
+                "     { \"match\" : { \"projectId\" : \"myProjectId\" }}\n" +
+                "     ]\n" +
+                "}\n" +
+                "}\n" +
+                "}";
+        String jsonResponse2 = TestsUtil.elasticPost(uri,jsonPost);
+        ElasticsearchArrayResult<GenericBuild> list2 = gson.fromJson(jsonResponse,elasticsearchArrayResulType);
+        assertTrue(list2.getTook() != null);
+        assertTrue(list2.getTook() != "0");
+        assertTrue(list2.getTimedOut() != null);
+        assertTrue(list2.getTimedOut() == "false");
+        assertTrue(list2.getShards() != null);
+        assertTrue(list2.getHits().getMaxScore() != null);
     }
 
 }
