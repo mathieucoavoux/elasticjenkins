@@ -84,7 +84,7 @@ public class ElasticJenkinsManagement extends ManagementLink {
      * @return: the index use for the log
      */
     public String getLogIndex() {
-        String logIndex = ElasticJenkinsUtil.getProperty("logIndex");
+        String logIndex = ElasticJenkinsUtil.getESConfProperty("logIndex");
         return logIndex == null ? "jenkins_logs" : logIndex;
     }
 

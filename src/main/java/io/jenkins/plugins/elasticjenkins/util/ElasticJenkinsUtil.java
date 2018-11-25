@@ -31,17 +31,32 @@ public class ElasticJenkinsUtil {
 
     private static final Logger LOGGER = Logger.getLogger(ElasticJenkinsUtil.class.getName());
 
-    private static File propertiesFile = new File(Jenkins.getInstance().getRootDir()+"/elasticjenkins.properties");
+    //TODO: change the value to comply to Jenkins naming convention
+    private static String elasticSearchConfFileName = "elasticjenkins.properties";
 
-    private static String jenkinsManageIndexCluster = ElasticJenkinsUtil.getProperty("jenkinsManageClusterIndex");
-    private static String jenkinsManageIndexMapping = ElasticJenkinsUtil.getProperty("jenkinsManageMappingIndex");
-    private static String jenkinsBuildsIndex = ElasticJenkinsUtil.getProperty("jenkinsBuildsIndex");
-    private static String jenkinsQueuesIndex = ElasticJenkinsUtil.getProperty("jenkinsQueuesIndex");
-    private static String jenkinsLogsIndex = ElasticJenkinsUtil.getProperty("jenkins_logs");
+    public static String logStorageConfFileName = "io.jenkins.plugins.elasticjenkins.logStorage.properties";
 
-    protected static String charset = ElasticJenkinsUtil.getProperty("elasticCharset");
-    private static String masterName = ElasticJenkinsUtil.getProperty("masterName");
-    protected static String health = ElasticJenkinsUtil.getProperty("jenkinsMappingHealth");
+    private static File propertiesFile = new File(Jenkins.getInstanceOrNull().getRootDir()+"/"+elasticSearchConfFileName);
+
+    private static String jenkinsManageIndexCluster = ElasticJenkinsUtil.getESConfProperty("jenkinsManageClusterIndex");
+    private static String jenkinsManageIndexMapping = ElasticJenkinsUtil.getESConfProperty("jenkinsManageMappingIndex");
+    private static String jenkinsBuildsIndex = ElasticJenkinsUtil.getESConfProperty("jenkinsBuildsIndex");
+    private static String jenkinsQueuesIndex = ElasticJenkinsUtil.getESConfProperty("jenkinsQueuesIndex");
+    private static String jenkinsLogsIndex = ElasticJenkinsUtil.getESConfProperty("jenkins_logs");
+
+    protected static String charset = ElasticJenkinsUtil.getESConfProperty("elasticCharset");
+    private static String masterName = ElasticJenkinsUtil.getESConfProperty("masterName");
+    protected static String health = ElasticJenkinsUtil.getESConfProperty("jenkinsMappingHealth");
+
+    public static String getLogStorageType() {
+        return logStorageType;
+    }
+
+    public static void setLogStorageType(String logStorageType) {
+        ElasticJenkinsUtil.logStorageType = logStorageType;
+    }
+
+    private static String logStorageType =  getStorageProperty("logStorageType");
 
     private static boolean jenkinsHealthCheckEnable = true;
 
@@ -100,8 +115,8 @@ public class ElasticJenkinsUtil {
 
     public static String getJenkinsHealth() { return health;}
 
-    protected static String clusterName = ElasticJenkinsUtil.getProperty("clusterName");
-    protected static String url = ElasticJenkinsUtil.getProperty("persistenceStore");
+    protected static String clusterName = ElasticJenkinsUtil.getESConfProperty("clusterName");
+    protected static String url = ElasticJenkinsUtil.getESConfProperty("persistenceStore");
 
     public static boolean isInitialized = ElasticJenkinsUtil.isInitialized();
     public static boolean isEmpty = ElasticJenkinsUtil.isEmpty();
@@ -197,15 +212,23 @@ public class ElasticJenkinsUtil {
      * @param property: property to retrieve
      * @return value of the property
      */
-    public static String getProperty(String property) {
+    public static String getESConfProperty(String property) {
+        return getProperty(propertiesFile,property);
+    }
+
+    public static String getStorageProperty(String property) {
+        return getProperty(new File(Jenkins.getInstanceOrNull().getRootDir(),"/"+logStorageConfFileName),property);
+    }
+
+    private static String getProperty(File fileProperties, String property) {
         Properties prop = new Properties();
         InputStream input = null;
-        if(!propertiesFile.exists()) {
-            LOGGER.log(Level.SEVERE, "Properties files doesn't exist:" + propertiesFile.getPath());
+        if(!fileProperties.exists()) {
+            LOGGER.log(Level.SEVERE, "Properties files doesn't exist:" + fileProperties.getPath());
             return null;
         }
         try {
-            input = new FileInputStream(propertiesFile);
+            input = new FileInputStream(fileProperties);
             prop.load(input);
             return prop.getProperty(property);
         } catch (Exception e) {

@@ -130,7 +130,7 @@ public class ElasticsearchArrayResultTest {
                 "}\n" +
                 "}";
         String jsonResponse2 = TestsUtil.elasticPost(uri,jsonPost);
-        ElasticsearchArrayResult<GenericBuild> list2 = gson.fromJson(jsonResponse,elasticsearchArrayResulType);
+        ElasticsearchArrayResult<GenericBuild> list2 = gson.fromJson(jsonResponse2,elasticsearchArrayResulType);
         assertTrue(list2.getTook() != null);
         assertTrue(list2.getTook() != "0");
         assertTrue(list2.getTimedOut() != null);
