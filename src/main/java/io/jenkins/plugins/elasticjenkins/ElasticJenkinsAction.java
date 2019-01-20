@@ -8,9 +8,7 @@ import hudson.model.*;
 import hudson.slaves.ComputerLauncher;
 
 import io.jenkins.plugins.elasticjenkins.entity.GenericBuild;
-import io.jenkins.plugins.elasticjenkins.util.ElasticJenkinsUtil;
-
-import io.jenkins.plugins.elasticjenkins.util.ElasticManager;
+import io.jenkins.plugins.elasticjenkins.util.*;
 
 import jenkins.model.RunAction2;
 import org.apache.commons.jelly.XMLOutput;
@@ -23,6 +21,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
 import org.xml.sax.SAXException;
 
 import javax.annotation.Nonnull;
+import javax.naming.ConfigurationException;
 import java.io.File;
 import java.io.IOException;
 import java.net.URLDecoder;
@@ -74,32 +73,51 @@ public class ElasticJenkinsAction extends ComputerLauncher implements RunAction2
     @JavaScriptMethod
     public List<GenericBuild> getPaginatedHistory(@Nonnull String viewType,
                                                   @Nonnull Integer paginationSize,@Nonnull String paginationStart) {
-        ElasticManager elasticManager = new ElasticManager();
-        String index = ElasticJenkinsUtil.getHash(project.getUrl().split("/$")[0]);
+        try {
+            ConfigurationStorageInterface configurationStorage = (ConfigurationStorageInterface) StorageProxyFactory.newInstance(ConfigurationStorageInterface.class);
+            String index = ElasticJenkinsUtil.getHash(project.getUrl().split("/$")[0]);
 
-        return elasticManager.getPaginateBuildHistory(index, viewType , paginationSize, paginationStart);
+            return configurationStorage.getPaginateBuildHistory(index,viewType,paginationSize,paginationStart);
+        }catch (ClassNotFoundException e1){
+            LOGGER.log(Level.SEVERE,"Proxy has NOT found the required interface. Cause:",e1.getCause());
+        }catch (ConfigurationException e2){
+            LOGGER.log(Level.SEVERE,"Configuration of the plugin has not been found. Please ensure you configure the plugin correctly");
+        }
+        return null;
     }
 
 
     @JavaScriptMethod
     public String getPagninatedHistoryJson(@Nonnull String viewType,
                                            @Nonnull Integer paginationSize,@Nonnull String paginationStart) {
+        try {
+            String index = ElasticJenkinsUtil.getHash(project.getUrl().split("/$")[0]);
+            Gson gson = new Gson();
+            ConfigurationStorageInterface configurationStorage = (ConfigurationStorageInterface) StorageProxyFactory.newInstance(ConfigurationStorageInterface.class);
 
-        ElasticManager elasticManager = new ElasticManager();
-        String index = ElasticJenkinsUtil.getHash(project.getUrl().split("/$")[0]);
-        Gson gson = new Gson();
-
-        return gson.toJson(elasticManager.getPaginateBuildHistory(index, viewType , paginationSize, paginationStart));
+            return gson.toJson(configurationStorage.getPaginateBuildHistory(index,viewType,paginationSize,paginationStart));
+        }catch (ClassNotFoundException e1){
+            LOGGER.log(Level.SEVERE,"Proxy has NOT found the required interface. Cause:",e1.getCause());
+        }catch (ConfigurationException e2){
+            LOGGER.log(Level.SEVERE,"Configuration of the plugin has not been found. Please ensure you configure the plugin correctly");
+        }
+        return null;
     }
 
     @JavaScriptMethod
     public String getNewResultsJson(@Nonnull String type,@Nonnull String viewType,@Nonnull String lastFetch) {
-        ElasticManager elasticManager = new ElasticManager();
-        String projectHash = ElasticJenkinsUtil.getHash(project.getUrl().split("/$")[0]);
-        Gson gson = new Gson();
+        try{
+            String projectHash = ElasticJenkinsUtil.getHash(project.getUrl().split("/$")[0]);
+            Gson gson = new Gson();
+            ConfigurationStorageInterface configurationStorage = (ConfigurationStorageInterface) StorageProxyFactory.newInstance(ConfigurationStorageInterface.class);
 
-
-        return gson.toJson(elasticManager.getNewResults(projectHash, lastFetch,viewType ));
+            return gson.toJson(configurationStorage.getNewResults(projectHash, lastFetch,viewType ));
+        }catch (ClassNotFoundException e1){
+            LOGGER.log(Level.SEVERE,"Proxy has NOT found the required interface. Cause:",e1.getCause());
+        }catch (ConfigurationException e2){
+            LOGGER.log(Level.SEVERE,"Configuration of the plugin has not been found. Please ensure you configure the plugin correctly");
+        }
+        return null;
     }
 
     @JavaScriptMethod
@@ -113,25 +131,36 @@ public class ElasticJenkinsAction extends ComputerLauncher implements RunAction2
 
 
     public String getBuildByParameters(@Nonnull String type,@Nonnull String viewType,@Nonnull String parameter) {
-        ElasticManager elasticManager = new ElasticManager();
-        String projectHash = ElasticJenkinsUtil.getHash(project.getUrl().split("/$")[0]);
-        Gson gson = new Gson();
-        return gson.toJson(elasticManager.findByParameter(projectHash, viewType,parameter));
+        try {
+            String projectHash = ElasticJenkinsUtil.getHash(project.getUrl().split("/$")[0]);
+            ConfigurationStorageInterface configurationStorage = (ConfigurationStorageInterface) StorageProxyFactory.newInstance(ConfigurationStorageInterface.class);
+            Gson gson = new Gson();
+            return gson.toJson(configurationStorage.findByParameter(projectHash, viewType,parameter));
+        }catch (ClassNotFoundException e1){
+            LOGGER.log(Level.SEVERE,"Proxy has NOT found the required interface. Cause:",e1.getCause());
+        }catch (ConfigurationException e2){
+            LOGGER.log(Level.SEVERE,"Configuration of the plugin has not been found. Please ensure you configure the plugin correctly");
+        }
+        return null;
     }
 
     @JavaScriptMethod
     public void writeOutput(XMLOutput out,String id) throws IOException, SAXException {
-        ElasticManager elasticManager = new ElasticManager();
-        //Get log id
-        String index = ElasticJenkinsUtil.getHash(project.getUrl().split("/$")[0]);
-        String suffix = elasticManager.getLogOutputId(id);
+        try {
+            //Get log id
+            String index = ElasticJenkinsUtil.getHash(project.getUrl().split("/$")[0]);
+            LogStorageInterface logStorage = (LogStorageInterface) StorageProxyFactory.newInstance(LogStorageInterface.class);
+            String suffix = logStorage.getLogOutputId(id);
+            File logOutput = logStorage.getLogOutput(URLDecoder.decode(suffix,"UTF-8"),id);
+            LOGGER.log(Level.FINEST,"Log output:"+logOutput.getPath());
+            new AnnotatedLargeText<GenericBuild>(logOutput,Charset.defaultCharset(),true,new GenericBuild()).writeHtmlTo(0,out.asWriter());
 
-        File logOutput = elasticManager.getLogOutput(URLDecoder.decode(suffix,"UTF-8"),id);
-        LOGGER.log(Level.FINEST,"Log output:"+logOutput.getPath());
-        new AnnotatedLargeText<GenericBuild>(logOutput,Charset.defaultCharset(),true,new GenericBuild()).writeHtmlTo(0,out.asWriter());
-
-        logOutput.delete();
-
+            logOutput.delete();
+        }catch (ClassNotFoundException e1){
+            LOGGER.log(Level.SEVERE,"Proxy has NOT found the required interface. Cause:",e1.getCause());
+        }catch (ConfigurationException e2){
+            LOGGER.log(Level.SEVERE,"Configuration of the plugin has not been found. Please ensure you configure the plugin correctly");
+        }
 
     }
 

@@ -79,11 +79,17 @@ public class TestsUtil {
     }
 
     public AbstractProject<?,?> generateProject(String id) {
-        AbstractItem item = Mockito.mock(AbstractItem.class);
-        AbstractProject<?,?> project = Mockito.mock(AbstractProject.class);
-        String url = "/"+title+"/"+id;
-        Mockito.when(project.getUrl()).thenReturn(url);
-        return project;
+        try {
+            AbstractProject<?,?> project = j.createFreeStyleProject(title);
+            return project;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        //AbstractItem item = Mockito.mock(AbstractItem.class);
+        //AbstractProject<?,?> project = Mockito.mock(AbstractProject.class);
+        //String url = "/"+title+"/"+id;
+        //Mockito.when(project.getUrl()).thenReturn(url);
+        return null;
     }
 
     public WorkflowJob genereatePipelineProject(String resourceName) throws IOException {

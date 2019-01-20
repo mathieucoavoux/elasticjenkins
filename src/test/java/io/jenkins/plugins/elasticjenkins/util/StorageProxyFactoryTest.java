@@ -8,16 +8,15 @@ import org.junit.rules.TemporaryFolder;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.TestEnvironment;
 
-import java.io.*;
+import javax.naming.ConfigurationException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-
-public class StorageLookupTest {
+public class StorageProxyFactoryTest {
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -51,16 +50,15 @@ public class StorageLookupTest {
     @Before
     public void setUp() throws IOException, InterruptedException {
         testsUtil.reset();
-        ElasticJenkinsUtil.setLogStorageType("cloud");
+        ElasticJenkinsUtil.setLogStorageType("elasticsearch");
+        ElasticJenkinsUtil.setConfigurationStorageType("elasticsearch");
     }
 
-
     @Test
-    public void testGetLogStorage() throws IOException {
-        Object storageType1 = StorageLookup.getStorage(LogStorageInterface.class);
-        assertTrue(storageType1 == null);
-        ElasticJenkinsUtil.setLogStorageType("elasticsearch");
-        Object storageType2 = StorageLookup.getStorage(LogStorageInterface.class);
-        assertEquals("io.jenkins.plugins.elasticjenkins.util.ElasticManager",storageType2.getClass().getName());
+    public void testNewInstance() throws ClassNotFoundException, ConfigurationException {
+        LogStorageInterface myObject = (LogStorageInterface)  StorageProxyFactory.newInstance(LogStorageInterface.class);
+        assertTrue(myObject.getLogOutputId(null) == null);
+        ConfigurationStorageInterface myObject2 = (ConfigurationStorageInterface) StorageProxyFactory.newInstance(ConfigurationStorageInterface.class);
+        assertTrue(myObject2.getCountCurrentBuilds() == 0);
     }
 }

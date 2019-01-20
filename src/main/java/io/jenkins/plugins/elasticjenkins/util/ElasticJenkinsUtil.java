@@ -48,6 +48,18 @@ public class ElasticJenkinsUtil {
     private static String masterName = ElasticJenkinsUtil.getESConfProperty("masterName");
     protected static String health = ElasticJenkinsUtil.getESConfProperty("jenkinsMappingHealth");
 
+    private static String logStorageType =  getStorageProperty("logStorageType");
+    private static String configurationStorageType = getStorageProperty("configurationStorageType");
+
+    public static String getConfigurationStorageType() {
+        return configurationStorageType;
+    }
+
+    public static void setConfigurationStorageType(String configurationStorageType) {
+        ElasticJenkinsUtil.configurationStorageType = configurationStorageType;
+    }
+
+
     public static String getLogStorageType() {
         return logStorageType;
     }
@@ -56,7 +68,7 @@ public class ElasticJenkinsUtil {
         ElasticJenkinsUtil.logStorageType = logStorageType;
     }
 
-    private static String logStorageType =  getStorageProperty("logStorageType");
+
 
     private static boolean jenkinsHealthCheckEnable = true;
 

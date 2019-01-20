@@ -4,8 +4,10 @@ import hudson.model.Computer;
 import hudson.model.Node;
 import hudson.slaves.DumbSlave;
 import io.jenkins.plugins.elasticjenkins.entity.GenericBuild;
+import io.jenkins.plugins.elasticjenkins.util.ConfigurationStorageInterface;
 import io.jenkins.plugins.elasticjenkins.util.ElasticJenkinsUtil;
 import io.jenkins.plugins.elasticjenkins.util.ElasticManager;
+import io.jenkins.plugins.elasticjenkins.util.StorageProxyFactory;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
@@ -49,7 +51,8 @@ public class ElasticJenkinsIntegrationTest {
             @Override
             public void evaluate() throws Throwable {
                 testsUtil.reset();
-                ElasticManager elasticManager = new ElasticManager();
+                ElasticJenkinsUtil.setConfigurationStorageType("elasticsearch");
+                ConfigurationStorageInterface configurationStorage = (ConfigurationStorageInterface) StorageProxyFactory.newInstance(ConfigurationStorageInterface.class);
                 WorkflowJob p = story.j.jenkins.createProject(WorkflowJob.class,"p");
                 story.j.createSlave();
                 p.setDefinition(new CpsFlowDefinition(testsUtil.loadResource("oneStepPipeline.groovy"),true));
@@ -61,12 +64,12 @@ public class ElasticJenkinsIntegrationTest {
                 Thread.sleep(5000);
                 String hash = ElasticJenkinsUtil.getHash(p.getUrl().split("/$")[0]);
                 //Check if there is one build in EXECUTING status
-                List<GenericBuild> list = elasticManager.getPaginateBuildHistory(hash, "clusters" , 5, "0");
+                List<GenericBuild> list = configurationStorage.getPaginateBuildHistory(hash, "clusters" , 5, "0");
                 int maxRetry = 10;
                 int retry = 0;
                 while(list.size() == 0 && retry < maxRetry) {
                     Thread.sleep(1000);
-                    list = elasticManager.getPaginateBuildHistory(hash, "clusters" , 5, "0");
+                    list = configurationStorage.getPaginateBuildHistory(hash, "clusters" , 5, "0");
                     retry = retry + 1;
                 }
                 assertEquals(1,list.size());
@@ -82,7 +85,8 @@ public class ElasticJenkinsIntegrationTest {
             @Override
             public void evaluate() throws Throwable {
                 testsUtil.reset();
-                ElasticManager elasticManager = new ElasticManager();
+                ElasticJenkinsUtil.setConfigurationStorageType("elasticsearch");
+                ConfigurationStorageInterface configurationStorage = (ConfigurationStorageInterface) StorageProxyFactory.newInstance(ConfigurationStorageInterface.class);
                 WorkflowJob p = story.j.jenkins.createProject(WorkflowJob.class,"p2");
                 story.j.createSlave();
                 p.setDefinition(new CpsFlowDefinition(testsUtil.loadResource("completedPipeline.groovy"),true));
@@ -95,13 +99,13 @@ public class ElasticJenkinsIntegrationTest {
                 String projectName = p.getUrl().split("/$")[0];
                 String hash = ElasticJenkinsUtil.getHash(projectName);
                 //Check if there is one build in SUCCESS status
-                List<GenericBuild> list = elasticManager.getPaginateBuildHistory(hash, "clusters" , 5, "0");
+                List<GenericBuild> list = configurationStorage.getPaginateBuildHistory(hash, "clusters" , 5, "0");
                 String result = list.size() == 1 ? list.get(0).getStatus() : null;
                 int maxRetry = 40;
                 int retry = 0;
                 while((list.size() == 0 ||  result != "SUCCESS") && retry < maxRetry ) {
                     Thread.sleep(1000);
-                    list = elasticManager.getPaginateBuildHistory(hash, "clusters" , 5, "0");
+                    list = configurationStorage.getPaginateBuildHistory(hash, "clusters" , 5, "0");
                     result = list.size() == 1 ? list.get(0).getStatus() : null;
                     retry = retry + 1;
                 }

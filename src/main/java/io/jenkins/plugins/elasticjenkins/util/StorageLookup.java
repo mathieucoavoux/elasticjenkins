@@ -11,7 +11,7 @@ public class StorageLookup {
 
     private static final Logger LOGGER = Logger.getLogger(StorageLookup.class.getName());
 
-    public static Object getLogStorage() {
+    private static Object getLogStorage() {
         switch (ElasticJenkinsUtil.getLogStorageType()) {
             case "elasticsearch":
                 return new ElasticManager();
@@ -21,5 +21,28 @@ public class StorageLookup {
                 return null;
         }
 
+    }
+
+    private static Object getConfigurationStorage() {
+        switch (ElasticJenkinsUtil.getConfigurationStorageType()) {
+            case "elasticsearch":
+                return new ElasticManager();
+            case "cloud":
+                return null;
+            default:
+                return null;
+        }
+    }
+
+    public static Object getStorage(Class interfaceName) {
+        switch (interfaceName.getSimpleName()) {
+            case "LogStorageInterface":
+                return getLogStorage();
+            case "ConfigurationStorageInterface":
+                return getConfigurationStorage();
+                default:
+                    LOGGER.log(Level.SEVERE,"I do NOT know this interface !!");
+                    return null;
+        }
     }
 }

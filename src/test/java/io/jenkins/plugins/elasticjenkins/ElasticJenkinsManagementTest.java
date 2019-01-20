@@ -1,7 +1,10 @@
 package io.jenkins.plugins.elasticjenkins;
 
 import hudson.model.Hudson;
+import io.jenkins.plugins.elasticjenkins.util.ConfigurationStorageInterface;
+import io.jenkins.plugins.elasticjenkins.util.ElasticJenkinsUtil;
 import io.jenkins.plugins.elasticjenkins.util.ElasticManager;
+import io.jenkins.plugins.elasticjenkins.util.StorageProxyFactory;
 import jenkins.model.Jenkins;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
@@ -27,6 +30,7 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import javax.naming.ConfigurationException;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -59,13 +63,10 @@ public class ElasticJenkinsManagementTest {
         }
     };
 
-    //@Rule
-    //public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
-    //TestsUtil testsUtil = new TestsUtil(j, temporaryFolder);
-
-//    @Mock
-//    private Jenkins jenkins;
+    TestsUtil testsUtil = new TestsUtil(j, temporaryFolder);
 
     private static String master = "MASTERNAME3";
     private static String clusterName = "CLUSTER_NAME3";
@@ -87,21 +88,14 @@ public class ElasticJenkinsManagementTest {
 
     @Before
     public void setUp() throws IOException, InterruptedException {
-  //      PowerMockito.mockStatic(Jenkins.class);
-  //      PowerMockito.when(Jenkins.getInstance()).thenReturn(jenkins);
-  //      PowerMockito.when(jenkins.getRootDir()).thenReturn(testFile);
-        //testsUtil.reset();
+        testsUtil.reset();
     }
 
 
     @Test
-    public void testDoConfigure() throws IllegalAccessException, NoSuchFieldException, IOException, InterruptedException, ReactorException {
+    public void testDoConfigure() throws IllegalAccessException, NoSuchFieldException, IOException, InterruptedException, ReactorException, ConfigurationException, ClassNotFoundException {
 
-
-        //Jenkins jenkinsEmpty = new Jenkins(null,null);
-        //PowerMockito.when(Jenkins.getInstance()).thenReturn(Jenkins.getInstanceOrNull());
-
-
+        ElasticJenkinsUtil.setConfigurationStorageType("elasticsearch");
 
         ElasticJenkinsManagement elasticJenkinsManagement = new ElasticJenkinsManagement();
 
@@ -118,8 +112,8 @@ public class ElasticJenkinsManagementTest {
         //Wait few seconds to let Elasticsearch save the master
         Thread.sleep(2000);
         //Get Id of the master to delete it
-        ElasticManager elasticManager = new ElasticManager();
-        List<String> listIds = elasticManager.getMasterIdByNameAndCluster(TestsUtil.master,TestsUtil.clusterName);
+        ConfigurationStorageInterface configurationStorage = (ConfigurationStorageInterface) StorageProxyFactory.newInstance(ConfigurationStorageInterface.class);
+        List<String> listIds = configurationStorage.getMasterIdByNameAndCluster(TestsUtil.master,TestsUtil.clusterName);
         for(String id : listIds) {
             //testsUtil.deleteTest(TestsUtil.clusterIndex,TestsUtil.clusterType,id);
         }

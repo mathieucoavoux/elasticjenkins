@@ -57,12 +57,9 @@ public class ElasticJenkinsActionTest {
     }
 
     @Test
-    public void allTest() {
-        //testGetBuildByParameters();
-    }
-
     public void testGetBuildByParameters() {
-        AbstractProject<?,?> project = testsUtil.generateProject("76");
+        AbstractProject<?,?> project = testsUtil.generateProject("project1");
+        ElasticJenkinsUtil.setConfigurationStorageType("elasticsearch");
         ElasticJenkinsAction elasticJenkinsAction = new ElasticJenkinsAction(project);
         elasticJenkinsAction.getBuildByParameters("builds","cluster","Bonjour2");
     }

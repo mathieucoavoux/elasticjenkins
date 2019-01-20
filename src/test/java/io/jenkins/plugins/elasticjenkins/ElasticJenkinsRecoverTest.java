@@ -9,6 +9,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.TestEnvironment;
@@ -51,6 +52,11 @@ public class ElasticJenkinsRecoverTest {
         testsUtil.reset();
         //Add startupTime
         ElasticJenkinsUtil.setStartupTime(startupTime1);
+    }
+
+    @Test
+    public void testRun() {
+        //This is an empty test since everything is done in the setUp
     }
 
 

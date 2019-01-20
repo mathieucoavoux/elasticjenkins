@@ -29,7 +29,8 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class ElasticManager {
+public class ElasticManager implements LogStorageInterface,ConfigurationStorageInterface
+{
 
     private static final Logger LOGGER = Logger.getLogger(ElasticManager.class.getName());
 
@@ -75,20 +76,6 @@ public class ElasticManager {
 
         List<ParametersAction> parametersActions = build.getActions(ParametersAction.class);
         if(parametersActions.size() > 0) {
-            /*
-            List<Parameters> listParameters = new ArrayList<>();
-            for (ParametersAction parametersAction : parametersActions) {
-                List<ParameterValue> parameterValues = parametersAction.getAllParameters();
-                for (ParameterValue parameterValue : parameterValues) {
-                    Parameters parameters = new Parameters();
-                    parameters.setName(parameterValue.getName());
-                    parameters.setValue(parameterValue.getValue());
-                    parameters.setDescription(parameterValue.getDescription());
-                    listParameters.add(parameters);
-                }
-
-            }
-            */
             genericBuild.setParametersAction(parametersActions);
         }
         genericBuild.setLaunchedByName(User.current().getDisplayName());
@@ -292,7 +279,7 @@ public class ElasticManager {
     public File getLogOutput(@Nonnull String suffix,@Nonnull String id) {
         String uri = url+"/"+suffix+"/_source";
 
-        File file = new File(Jenkins.getInstance().getRootDir(),"/"+id);
+        File file = new File(Jenkins.getInstanceOrNull().getRootDir(),"/"+id);
         BufferedWriter writer = null;
 
         try {
@@ -472,20 +459,6 @@ public class ElasticManager {
 
         List<ParametersAction> parametersActions = waitingItem.getActions(ParametersAction.class);
         if(parametersActions.size() > 0) {
-            /*
-            List<Parameters> listParameters = new ArrayList<>();
-            for (ParametersAction parametersAction : parametersActions) {
-                List<ParameterValue> parameterValues = parametersAction.getAllParameters();
-                for (ParameterValue parameterValue : parameterValues) {
-                    Parameters parameters = new Parameters();
-                    parameters.setName(parameterValue.getName());
-                    parameters.setValue(parameterValue.getValue());
-                    parameters.setDescription(parameterValue.getDescription());
-                    listParameters.add(parameters);
-                }
-
-            }
-            */
             genericBuild.setParametersAction(parametersActions);
         }
         genericBuild.setParametersAction(parametersActions);
@@ -844,6 +817,5 @@ public class ElasticManager {
         listElasticSearchResult.getHits().getHits().forEach(e -> listBuilds.add(e.getSource()));
         return listBuilds;
     }
-
 
 }
