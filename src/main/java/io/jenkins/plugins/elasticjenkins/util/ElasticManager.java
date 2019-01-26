@@ -13,6 +13,7 @@ import io.jenkins.plugins.elasticjenkins.entity.*;
 import jenkins.model.Jenkins;
 
 import org.apache.commons.collections.map.HashedMap;
+import org.apache.commons.io.Charsets;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -20,6 +21,7 @@ import java.io.*;
 import java.lang.reflect.Type;
 import java.net.URLEncoder;
 
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -29,7 +31,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class ElasticManager implements LogStorageInterface,ConfigurationStorageInterface
+public class ElasticManager implements LogStorageInterface,ConfigurationStorageInterface,ClusterStorageInterface
 {
 
     private static final Logger LOGGER = Logger.getLogger(ElasticManager.class.getName());
@@ -112,14 +114,15 @@ public class ElasticManager implements LogStorageInterface,ConfigurationStorageI
 
     /**
      * Update the build with the status, log output and completion date.
-     * @param id: Elasticsearch id of the build
-     * @param status: Status of the job
-     * @param file: Log file where is store the output
+     * @param id : Elasticsearch id of the build
+     * @param status : Status of the job
+     * @param file : Log file where is store the output
+     * @param fileCharset
      * @return the Elasticsearch id
      */
     public String updateBuild(@Nonnull String id,
                               @Nonnull String status,
-                              @Nullable File file) {
+                              @Nullable File file, @Nullable Charset fileCharset) {
         String elasticSearchId = "";
         String indexLogs = ElasticJenkinsUtil.getJenkinsLogsIndex();
 
@@ -134,12 +137,26 @@ public class ElasticManager implements LogStorageInterface,ConfigurationStorageI
         }
         String suffix = "";
         if (size > 0 ) {
+            if(fileCharset == null)
+                fileCharset = Charset.defaultCharset();
+            /*
+            ArrayList<String> logs = new ArrayList<>();
+            try {
+                byte[] bFile = Files.readAllBytes(file.toPath());
+                logs.add(URLEncoder.encode(new String(bFile,"UTF8"),"UTF-8"));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            */
+
             try {
                 String typeLog = new SimpleDateFormat("yyyy_MM").format(new Date());
                 String logId = null;
                 String uriLogs = url + "/" + typeLog + "/" + indexLogs + "/";
+
                 String json = "{ \"logs\" : \n" +
-                        gson.toJson(Files.readAllLines(file.toPath()), List.class) +
+
+                        gson.toJson(Files.readAllLines(file.toPath(),fileCharset), List.class) +
                         "}";
                 LOGGER.log(Level.FINEST, "URI: {0}, json: {1}", new Object[]{uriLogs, json});
                 Type elasticsearchResulType = new TypeToken<ElasticsearchResult<GenericBuild>>(){}.getType();
@@ -149,6 +166,9 @@ public class ElasticManager implements LogStorageInterface,ConfigurationStorageI
             }catch (IOException e) {
                 LOGGER.log(Level.SEVERE,"An unexpected response was received:",e);
             }
+
+
+
         }
         String uri = url+"/"+jenkinsBuildsIndex+"/"+jenkinsBuildsType+"/"+id+"/_update";
         String json;

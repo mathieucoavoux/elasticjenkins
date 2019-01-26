@@ -50,6 +50,17 @@ public class ElasticJenkinsUtil {
 
     private static String logStorageType =  getStorageProperty("logStorageType");
     private static String configurationStorageType = getStorageProperty("configurationStorageType");
+    private static String clusterStorageType = getStorageProperty("clusterStorageType");
+
+    public static String getClusterStorageType() {
+        return clusterStorageType;
+    }
+
+    public static void setClusterStorageType(String clusterStorageType) {
+        ElasticJenkinsUtil.clusterStorageType = clusterStorageType;
+    }
+
+
 
     public static String getConfigurationStorageType() {
         return configurationStorageType;
@@ -258,6 +269,7 @@ public class ElasticJenkinsUtil {
     }
 
     /**
+     * TODO: Change method to take into account the Proxy
      * Write properties used by ElasticJenkins plugin to the properties file
      * @param masterName : name of the Jenkins master
      * @param clusterName: name of the Jenkins cluster
@@ -303,6 +315,13 @@ public class ElasticJenkinsUtil {
         props.setProperty("jenkinsManageClusterIndex",clusterIndex);
         props.setProperty("jenkinsManageMappingIndex",mappingIndex);
         props.setProperty("jenkinsMappingHealth",mappingHealth);
+        //TODO: to be changed
+        setConfigurationStorageType("elasticsearch");
+        setLogStorageType("elasticsearch");
+        setClusterStorageType("elasticsearch");
+        props.setProperty("logStorageType","elasticsearch");
+        props.setProperty("configurationStorageType","elasticsearch");
+        props.setProperty("clusterStorageType","elasticsearch");
         try {
             out = new FileOutputStream(propertiesFile);
             BufferedWriter writer = new BufferedWriter(new FileWriter(propertiesFile.getPath(), false));

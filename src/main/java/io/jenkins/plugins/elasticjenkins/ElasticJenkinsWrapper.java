@@ -7,8 +7,10 @@ import java.net.URLEncoder;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
+import io.jenkins.plugins.elasticjenkins.util.ConfigurationStorageInterface;
 import io.jenkins.plugins.elasticjenkins.util.ElasticJenkinsUtil;
 import io.jenkins.plugins.elasticjenkins.util.ElasticManager;
+import io.jenkins.plugins.elasticjenkins.util.StorageProxyFactory;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import hudson.EnvVars;
@@ -22,6 +24,7 @@ import hudson.tasks.BuildWrapperDescriptor;
 import jenkins.tasks.SimpleBuildWrapper;
 
 import javax.annotation.Nullable;
+import javax.naming.ConfigurationException;
 
 
 public class ElasticJenkinsWrapper extends SimpleBuildWrapper implements Serializable {
@@ -74,12 +77,21 @@ public class ElasticJenkinsWrapper extends SimpleBuildWrapper implements Seriali
 
 	    public DisposerImpl(Run<?,?> build) {
 	        //We save the build here when it starts
-			ElasticManager em = new ElasticManager();
+			ConfigurationStorageInterface configurationStorage;
+			try {
+				configurationStorage = (ConfigurationStorageInterface) StorageProxyFactory.newInstance(ConfigurationStorageInterface.class);
+			}catch (ClassNotFoundException e1){
+				LOGGER.log(Level.SEVERE,"Proxy has NOT found the required interface. Cause:",e1.getCause());
+				return;
+			}catch (ConfigurationException e2){
+				LOGGER.log(Level.SEVERE,"Configuration of the plugin has not been found. Please ensure you configure the plugin correctly");
+				return;
+			}
 			//The hash of the project name is used for the index
             String buildUrl = build.getUrl().split("/"+build.getId()+"/$")[0];
 			String index = ElasticJenkinsUtil.getHash(buildUrl);
 			try {
-				this.projectId = em.addProjectMapping(index,URLEncoder.encode(buildUrl,ElasticJenkinsUtil.getCharset()));
+				this.projectId = configurationStorage.addProjectMapping(index,URLEncoder.encode(buildUrl,ElasticJenkinsUtil.getCharset()));
 				if( ElasticJenkinsUtil.isEmpty) {
 					ElasticJenkinsUtil elasticJenkinsUtil = new ElasticJenkinsUtil();
 					elasticJenkinsUtil.setIsEmpty(false);
@@ -89,19 +101,27 @@ public class ElasticJenkinsWrapper extends SimpleBuildWrapper implements Seriali
 				LOGGER.log(Level.SEVERE,"Charset not supported:"+ElasticJenkinsUtil.getCharset());
 			}
 			LOGGER.log(Level.FINEST,"Job hash: "+index);
-			id = em.addBuild(projectId,build);
+			id = configurationStorage.addBuild(projectId,build);
 
         }
 
 
         @Override
-        public void tearDown(Run<?, ?> build, FilePath workspace, Launcher launcher, TaskListener listener) throws IOException, InterruptedException {
+        public void tearDown(Run<?, ?> build, FilePath workspace, Launcher launcher, TaskListener listener) {
             if(build instanceof Run && pipeline == false){
+				ConfigurationStorageInterface configurationStorage;
                 //Update the status of the build and add the log output
+				try {
+					configurationStorage = (ConfigurationStorageInterface) StorageProxyFactory.newInstance(ConfigurationStorageInterface.class);
+				}catch (ClassNotFoundException e1){
+					LOGGER.log(Level.SEVERE,"Proxy has NOT found the required interface. Cause:",e1.getCause());
+					return;
+				}catch (ConfigurationException e2){
+					LOGGER.log(Level.SEVERE,"Configuration of the plugin has not been found. Please ensure you configure the plugin correctly");
+					return;
+				}
 
-				ElasticManager em = new ElasticManager();
-				//Handle weird characters
-				//int maxLines = (int) Files.lines(build.getLogFile().toPath(), StandardCharsets.UTF_16).count();
+
 				String status = "";
 				if (build instanceof Run) {
 					if(build.getResult() != null) {
@@ -114,7 +134,7 @@ public class ElasticJenkinsWrapper extends SimpleBuildWrapper implements Seriali
 
 				}
 
-				id = em.updateBuild(id,status,build.getLogFile());
+				id = configurationStorage.updateBuild(id,status,build.getLogFile(), build.getCharset());
             }
         }
     }

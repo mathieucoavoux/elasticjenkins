@@ -2,12 +2,9 @@ package io.jenkins.plugins.elasticjenkins.util;
 
 import com.google.gson.Gson;
 import com.jayway.jsonpath.JsonPath;
-import hudson.Functions;
 import hudson.model.*;
 import io.jenkins.plugins.elasticjenkins.TestsUtil;
 import io.jenkins.plugins.elasticjenkins.entity.GenericBuild;
-import org.jenkinsci.plugins.workflow.job.WorkflowJob;
-import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 import org.jvnet.hudson.test.JenkinsRule;
@@ -17,6 +14,7 @@ import org.powermock.api.mockito.PowerMockito;
 import java.io.*;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
@@ -85,6 +83,7 @@ public class ElasticManagerTest  {
         String index = "jenkins_test";
         String type = "builds";
         String fileName = "testUpdate.log";
+        File fileTest = new File("C:\\Users\\Mathieu\\Jenkins\\plugins\\elasticjenkins\\work\\jobs\\Abc\\builds\\27\\log");
         String idElastic = em.addBuild(index,build);
         List<String> logs = new ArrayList<>();
         logs.add("éer");
@@ -96,8 +95,8 @@ public class ElasticManagerTest  {
         for(String row : logs)
             writer.append(row);
         writer.close();
-        PowerMockito.when(build.getLogFile()).thenReturn(file);
-        String idUpdated = em.updateBuild(idElastic,"COMPLETED",file);
+        PowerMockito.when(build.getLogFile()).thenReturn(fileTest);
+        String idUpdated = em.updateBuild(idElastic,"COMPLETED",fileTest, Charset.defaultCharset());
         assertEquals("1_"+index+"_"+TestsUtil.masterId,idUpdated);
         String idLog = em.searchById(idUpdated).getLogId();
         assertTrue(idLog != null);
@@ -135,7 +134,7 @@ public class ElasticManagerTest  {
         writer.flush();
         writer.close();
         PowerMockito.when(build.getLogFile()).thenReturn(file);
-        String idUpdated = em.updateBuild(idElastic,"COMPLETED",file);
+        String idUpdated = em.updateBuild(idElastic,"COMPLETED",file, Charset.defaultCharset());
         assertEquals(idElastic,idUpdated);
         GenericBuild genericBuild = em.searchById(idElastic);
         String idLog = genericBuild.getLogId();

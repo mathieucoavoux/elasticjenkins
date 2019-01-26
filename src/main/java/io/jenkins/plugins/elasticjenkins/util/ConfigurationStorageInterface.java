@@ -7,6 +7,7 @@ import io.jenkins.plugins.elasticjenkins.entity.GenericBuild;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
+import java.nio.charset.Charset;
 import java.util.List;
 
 public interface ConfigurationStorageInterface extends StorageInterface {
@@ -27,11 +28,12 @@ public interface ConfigurationStorageInterface extends StorageInterface {
      * @param id The entry Id where the build has been saved
      * @param status The status of the build.
      * @param file The log file where the output is stored
+     * @param fileCharset
      * @return The entry Id that have been updated.
      */
     String updateBuild(@Nonnull String id,
                        @Nonnull String status,
-                       @Nullable File file);
+                       @Nullable File file, Charset fileCharset);
 
     /**
      * Get the list of the build for a specific project.
