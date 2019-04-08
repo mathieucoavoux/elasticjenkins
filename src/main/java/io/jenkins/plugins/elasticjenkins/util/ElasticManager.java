@@ -8,12 +8,12 @@ import com.jayway.jsonpath.JsonPath;
 
 import hudson.model.*;
 
+import hudson.model.Queue;
 import io.jenkins.plugins.elasticjenkins.ElasticJenkinsRecover;
 import io.jenkins.plugins.elasticjenkins.entity.*;
 import jenkins.model.Jenkins;
 
 import org.apache.commons.collections.map.HashedMap;
-import org.apache.commons.io.Charsets;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -24,10 +24,7 @@ import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -80,14 +77,14 @@ public class ElasticManager implements LogStorageInterface,ConfigurationStorageI
         if(parametersActions.size() > 0) {
             genericBuild.setParametersAction(parametersActions);
         }
-        genericBuild.setLaunchedByName(User.current().getDisplayName());
-        genericBuild.setLaunchedById(User.current().getId());
+        genericBuild.setLaunchedByName(Objects.requireNonNull(User.current()).getDisplayName());
+        genericBuild.setLaunchedById(Objects.requireNonNull(User.current()).getId());
         genericBuild.setJenkinsMasterName(master);
-        genericBuild.setJenkinsMasterId(ElasticJenkinsUtil.getCurrentMasterId());
+        genericBuild.setJenkinsMasterId(Objects.requireNonNull(ElasticJenkinsUtil.getCurrentMasterId()));
         genericBuild.setProjectId(projectId);
         try {
-            if(Executor.currentExecutor() != null && Executor.currentExecutor().getOwner().getHostName() != null) {
-                genericBuild.setExecutedOn(Executor.currentExecutor().getOwner().getHostName());
+            if(Executor.currentExecutor() != null && Objects.requireNonNull(Executor.currentExecutor()).getOwner().getHostName() != null) {
+                genericBuild.setExecutedOn(Objects.requireNonNull(Executor.currentExecutor()).getOwner().getHostName());
             }
         } catch (IOException | InterruptedException e) {
             LOGGER.log(Level.INFO,"We can not retrieve the hostname of the slave");
@@ -139,15 +136,6 @@ public class ElasticManager implements LogStorageInterface,ConfigurationStorageI
         if (size > 0 ) {
             if(fileCharset == null)
                 fileCharset = Charset.defaultCharset();
-            /*
-            ArrayList<String> logs = new ArrayList<>();
-            try {
-                byte[] bFile = Files.readAllBytes(file.toPath());
-                logs.add(URLEncoder.encode(new String(bFile,"UTF8"),"UTF-8"));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            */
 
             try {
                 String typeLog = new SimpleDateFormat("yyyy_MM").format(new Date());

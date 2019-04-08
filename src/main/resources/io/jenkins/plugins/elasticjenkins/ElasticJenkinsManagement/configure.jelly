@@ -1,0 +1,101 @@
+<?jelly escape-by-default='true'?>
+<!--
+ ~ The MIT License
+ ~
+ ~ Copyright (c).
+ ~ Author: Mathieu COAVOUX
+ ~ Permission is hereby granted, free of charge, to any person obtaining a copy
+ ~ of this software and associated documentation files (the "Software"), to deal
+ ~ in the Software without restriction, including without limitation the rights
+ ~ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ ~ copies of the Software, and to permit persons to whom the Software is
+ ~ furnished to do so, subject to the following conditions:
+ ~
+ ~ The above copyright notice and this permission notice shall be included in
+ ~ all copies or substantial portions of the Software.
+ ~
+ ~ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ ~ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ ~ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ ~ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ ~ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ ~ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ ~ THE SOFTWARE.
+ -->
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:l="/lib/layout"
+         xmlns:f="/lib/form" xmlns:t="/lib/hudson">
+    <l:layout title="${it.displayName}" norefresh="true" permission="${app.ADMINISTER}">
+        <style>
+            .notification{padding:.75rem 1.25rem;margin-bottom:1rem;border:1px solid transparent;border-radius:.25rem}
+            .notification-danger{background-color:#f2dede;border-color:#ebcccc;color:#a94442}
+            .notification-success {background-color: #dff0d8;border-color: #d0e9c6;color: #3c763d;}
+        </style>
+        <link type="text/css" href="${rootURL}/plugin/elasticjenkins/css/bootstrap.min.css" rel="stylesheet"/>
+        <link type="text/css" rel="stylesheet" href="${rootURL}/plugin/elasticjenkins/css/default.css"/>
+        <st:include it="${app}" page="sidepanel"/>
+        <l:main-panel>
+            <h1>ElasticJenkins settings</h1>
+            <j:if test="${request.hasParameter('saved')}">
+                <div class="notification notification-success">
+                    <strong>Success</strong> Settings have been saved successfully
+                </div>
+            </j:if>
+            <j:if test="${request.hasParameter('success')}">
+                <div class="notification notification-success">
+                    <strong>Success</strong> Settings have been saved successfully
+                </div>
+            </j:if>
+            <j:if test="${request.hasParameter('error')}">
+                <div class="notification notification-danger">
+                    <strong>Error</strong> Settings can not be saved. Please check log.
+                </div>
+            </j:if>
+            <j:if test="${request.hasParameter('exists')}">
+                <div class="notification notification-danger">
+                    <strong>Error</strong> The server exists already. Please select force creation if you want to overwrite this server.
+                </div>
+            </j:if>
+
+            <ul class="nav nav-tabs flex-column flex-sm-row">
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Global settings</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Log storage</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="#">Configuration storage</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Cluster storage</a>
+                </li>
+            </ul>
+
+            <f:form method="post" name="config" action="configure" >
+
+                <j:set var="persistenceStore" value="${it.getPersistenceStore()}" />
+
+                <j:set var="jenkinsQueues" value="${it.getJenkinsQueues()}" />
+
+                <j:set var="jenkinsBuilds" value="${it.getJenkinsBuilds()}" />
+
+
+                <f:entry title="Persistence store:" class="form-check-label">
+                    <f:textbox name="persistenceStore" class="form-input" default="${persistenceStore}"/>
+                </f:entry>
+
+                <f:entry title="Index name of the builds:" class="form-check-label">
+                    <f:textbox name="jenkinsBuilds" class="form-input" default="${jenkinsBuilds}"/>
+                </f:entry>
+
+                <f:entry title="Index name of the queues:" class="form-check-label">
+                    <f:textbox name="jenkinsQueues" class="form-input" default="${jenkinsQueues}"/>
+                </f:entry>
+
+                <f:entry title="">
+                    <f:submit value="Save" />
+                </f:entry>
+            </f:form>
+        </l:main-panel>
+    </l:layout>
+</j:jelly>

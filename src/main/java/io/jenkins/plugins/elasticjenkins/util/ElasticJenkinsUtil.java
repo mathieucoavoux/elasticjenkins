@@ -31,12 +31,11 @@ public class ElasticJenkinsUtil {
 
     private static final Logger LOGGER = Logger.getLogger(ElasticJenkinsUtil.class.getName());
 
-    //TODO: change the value to comply to Jenkins naming convention
-    private static String elasticSearchConfFileName = "elasticjenkins.properties";
+    private static String configurationStorageConfFileName = "io.jenkins.plugins.elasticjenkins.configStorage.properties";
 
     public static String logStorageConfFileName = "io.jenkins.plugins.elasticjenkins.logStorage.properties";
 
-    private static File propertiesFile = new File(Jenkins.getInstanceOrNull().getRootDir()+"/"+elasticSearchConfFileName);
+    private static File propertiesFile = new File(Jenkins.getInstanceOrNull().getRootDir()+"/"+ configurationStorageConfFileName);
 
     private static String jenkinsManageIndexCluster = ElasticJenkinsUtil.getESConfProperty("jenkinsManageClusterIndex");
     private static String jenkinsManageIndexMapping = ElasticJenkinsUtil.getESConfProperty("jenkinsManageMappingIndex");

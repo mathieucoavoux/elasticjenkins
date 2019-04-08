@@ -30,6 +30,8 @@
     	.notification-danger{background-color:#f2dede;border-color:#ebcccc;color:#a94442}
     	.notification-success {background-color: #dff0d8;border-color: #d0e9c6;color: #3c763d;}
     </style>
+      <link type="text/css" href="${rootURL}/plugin/elasticjenkins/css/bootstrap.min.css" rel="stylesheet"/>
+      <link type="text/css" rel="stylesheet" href="${rootURL}/plugin/elasticjenkins/css/default.css"/>
     <st:include it="${app}" page="sidepanel"/>
     <l:main-panel>
     <h1>ElasticJenkins settings</h1>
@@ -53,6 +55,19 @@
       		<strong>Error</strong> The server exists already. Please select force creation if you want to overwrite this server.
       	</div>
     </j:if>
+
+        <ul class="nav nav-tabs flex-column flex-sm-row">
+            <li class="nav-item">
+                <a class="nav-link active" href="#">Log</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="configView">Configuration</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">Cluster</a>
+            </li>
+        </ul>
+
     <f:form method="post" name="config" action="configure" >
         	<j:set var="masterName" value="${it.getJenkinsMaster()}" />
 

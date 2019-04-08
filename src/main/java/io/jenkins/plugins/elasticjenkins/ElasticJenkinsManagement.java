@@ -203,4 +203,7 @@ public class ElasticJenkinsManagement extends ManagementLink {
         return esr.getId() != null ? true : false;
     }
 
+    public HttpResponse doConfigView() {
+        return HttpResponses.forwardToView(this,"configure.jelly");
+    }
 }
