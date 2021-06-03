@@ -7,7 +7,7 @@
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
         <version>3.24</version>
-        <relativePath />
+        <relativePath/>
     </parent>
     <groupId>io.jenkins.plugins</groupId>
     <artifactId>elasticjenkins</artifactId>
@@ -19,7 +19,7 @@
         <elasticsearch.version>6.2.4</elasticsearch.version>
         <javadoc.exec.goal>javadoc</javadoc.exec.goal>
         <powermock.version>1.7.4</powermock.version>
-        <jsonpath.version>2.4.0</jsonpath.version>
+        <jsonpath.version>2.6.0</jsonpath.version>
         <!-- For test purpose -->
         <cloudbees-folder.version>6.1.2</cloudbees-folder.version>
         <script-security.version>1.46</script-security.version>
