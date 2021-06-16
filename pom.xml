@@ -26,7 +26,7 @@
         <mockito-core.version>2.8.47</mockito-core.version>
         <objenesis.version>2.5</objenesis.version>
         <junit.version>4.12</junit.version>
-        <credentials.version>2.1.19</credentials.version>
+        <credentials.version>2.3.19</credentials.version>
         <structs.version>1.17</structs.version>
         <jenkins-workflow-cps.version>2.59</jenkins-workflow-cps.version>
         <workflow-step-api.version>2.16</workflow-step-api.version>
