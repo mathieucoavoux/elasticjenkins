@@ -28,7 +28,7 @@
         <junit.version>4.12</junit.version>
         <credentials.version>2.1.19</credentials.version>
         <structs.version>1.17</structs.version>
-        <jenkins-workflow-cps.version>2.59</jenkins-workflow-cps.version>
+        <jenkins-workflow-cps.version>2.65</jenkins-workflow-cps.version>
         <workflow-step-api.version>2.16</workflow-step-api.version>
         <workflow-support.version>2.21</workflow-support.version>
         <workflow-scm-step.version>2.4</workflow-scm-step.version>
