@@ -22,7 +22,7 @@
         <jsonpath.version>2.4.0</jsonpath.version>
         <!-- For test purpose -->
         <cloudbees-folder.version>6.1.2</cloudbees-folder.version>
-        <script-security.version>1.46</script-security.version>
+        <script-security.version>1.56</script-security.version>
         <mockito-core.version>2.8.47</mockito-core.version>
         <objenesis.version>2.5</objenesis.version>
         <junit.version>4.12</junit.version>
